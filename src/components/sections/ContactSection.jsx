@@ -1,25 +1,28 @@
 import { contactInfo } from "../../data/siteData";
+import { useLanguage } from "../../context/LanguageContext";
 import SectionTitle from "../common/SectionTitle";
 
 const MAP_EMBED_URL =
   "https://maps.google.com/maps?q=Sehjowal+Chak+No.+11,+Tehsil+Pattoki,+District+Kasur&t=&z=13&ie=UTF8&iwloc=&output=embed";
 
 export default function ContactSection() {
+  const { t } = useLanguage();
+
   return (
     <section id="contact" className="section inquiry">
       <div className="container inquiry__grid">
         <div>
           <SectionTitle
-            label="Get in Touch"
-            title="Contact Us"
-            desc="Reach out for orders, wholesale inquiries, or any questions about our farm-fresh products."
+            label={t("contact.label")}
+            title={t("contact.title")}
+            desc={t("contact.desc")}
           />
 
           <div className="inquiry__info-list">
             <div className="inquiry__info-item">
               <div className="inquiry__info-icon">📞</div>
               <div>
-                <div className="inquiry__info-label">Phone / WhatsApp</div>
+                <div className="inquiry__info-label">{t("contact.phoneLabel")}</div>
                 <a
                   href="tel:+923044169153"
                   className="inquiry__info-value inquiry__info-link"
@@ -31,14 +34,14 @@ export default function ContactSection() {
             <div className="inquiry__info-item">
               <div className="inquiry__info-icon">📍</div>
               <div>
-                <div className="inquiry__info-label">Farm Address</div>
+                <div className="inquiry__info-label">{t("contact.addressLabel")}</div>
                 <div className="inquiry__info-value">{contactInfo.address}</div>
               </div>
             </div>
             <div className="inquiry__info-item">
               <div className="inquiry__info-icon">⏰</div>
               <div>
-                <div className="inquiry__info-label">Business Hours</div>
+                <div className="inquiry__info-label">{t("contact.hoursLabel")}</div>
                 <div className="inquiry__info-value">{contactInfo.businessHours}</div>
               </div>
             </div>

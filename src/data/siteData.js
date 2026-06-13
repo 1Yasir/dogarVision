@@ -13,29 +13,17 @@ export const colors = {
 };
 
 export const navLinks = [
-  { label: "Home", href: "/#home" },
-  { label: "About", href: "/#about" },
-  { label: "Products", href: "/#products" },
-  { label: "Cart", href: "/cart", isCart: true },
-  { label: "Contact", href: "/#contact" },
+  { key: "home", href: "/#home" },
+  { key: "about", href: "/#about" },
+  { key: "products", href: "/#products" },
+  { key: "cart", href: "/cart", isCart: true },
+  { key: "contact", href: "/#contact" },
 ];
 
 export const features = [
-  {
-    icon: "🛡️",
-    title: "Biosecurity & Hygiene",
-    desc: "Strict disease control protocols and a clean, sanitized environment keep our flock healthy and safe.",
-  },
-  {
-    icon: "🌿",
-    title: "100% Organic Feed",
-    desc: "No harmful chemicals or growth promoters — only natural, high-quality feed for completely organic growth.",
-  },
-  {
-    icon: "🚚",
-    title: "Consistent Supply",
-    desc: "Fresh daily production with reliable wholesale delivery to grocery stores, restaurants, and bulk buyers.",
-  },
+  { key: "biosecurity", icon: "🛡️" },
+  { key: "organic", icon: "🌿" },
+  { key: "supply", icon: "🚚" },
 ];
 
 export const products = [
@@ -51,6 +39,7 @@ export const products = [
     badge: "Best Seller",
     imageLabel: "Fresh Eggs",
     emoji: "🥚",
+    available: false,
   },
   {
     id: "chicken",
@@ -64,6 +53,7 @@ export const products = [
     badge: "Premium",
     imageLabel: "Broiler Chicken",
     emoji: "🍗",
+    available: false,
   },
   {
     id: "chicks",
@@ -77,6 +67,7 @@ export const products = [
     badge: "For Farmers",
     imageLabel: "Day-Old Chicks",
     emoji: "🐣",
+    available: false,
   },
   {
     id: "achar",
@@ -92,8 +83,13 @@ export const products = [
     imageLabel: "Homemade Achar",
     emoji: "🫙",
     detailPath: "/product/achar",
+    available: true,
   },
 ];
+
+export function getSortedProducts(list = products) {
+  return [...list].sort((a, b) => Number(b.available) - Number(a.available));
+}
 
 export const productFilters = [
   { id: "all", label: "All Products" },

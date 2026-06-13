@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
+import { useLanguage } from "../../context/LanguageContext";
 import Button from "../common/Button";
 
 function formatPrice(amount) {
@@ -9,21 +10,25 @@ function formatPrice(amount) {
 
 export default function ProductCard({
   id,
-  name,
-  desc,
   price,
-  badge,
-  imageLabel,
-  emoji,
   detailPath,
   unitPrice,
   unit,
   unitType,
   kgOptions = [],
+  emoji,
+  available = true,
 }) {
   const { addToCart } = useCart();
-  const [selectedKg, setSelectedKg] = useState(kgOptions[0] ?? 1);
+  const { t } = useLanguage();
+  const [selectedKg] = useState(kgOptions[0] ?? 1);
   const [addedFeedback, setAddedFeedback] = useState(false);
+
+  const itemCopy = t(`products.items.${id}`);
+  const name = itemCopy.name;
+  const desc = itemCopy.desc;
+  const badge = available ? itemCopy.badge : t("products.comingSoon");
+  const imageLabel = itemCopy.imageLabel;
 
   const isKgProduct = unitType === "kg";
   const displayPrice = isKgProduct
@@ -33,53 +38,36 @@ export default function ProductCard({
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!available) return;
+
     const quantity = isKgProduct ? selectedKg : 1;
-    addToCart(
-      { id, name, emoji, unitPrice, unit, unitType },
-      quantity
-    );
+    addToCart({ id, name, emoji, unitPrice, unit, unitType }, quantity);
     setAddedFeedback(true);
     setTimeout(() => setAddedFeedback(false), 1500);
   };
 
   const cartControls = (
     <div className="product-card__cart-controls">
-
-      {/* {isKgProduct && (
-        <div className="product-card__kg-select">
-          <label className="product-card__kg-label" htmlFor={`kg-${id}`}>
-            Select Quantity (KG)
-          </label>
-          <select
-            id={`kg-${id}`}
-            className="product-card__kg-dropdown"
-            value={selectedKg}
-            onChange={(e) => setSelectedKg(Number(e.target.value))}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {kgOptions.map((kg) => (
-              <option key={kg} value={kg}>
-                {kg} kg — {formatPrice(unitPrice * kg)}
-              </option>
-            ))}
-          </select>
-        </div>
-      )} */}
       <Button
         type="button"
         variant="primary"
         size="sm"
         onClick={handleAddToCart}
+        disabled={!available}
         className={addedFeedback ? "product-card__add-btn--added" : ""}
       >
-        {addedFeedback ? "✓ Added!" : "Add to Cart"}
+        {addedFeedback ? t("products.added") : t("products.addToCart")}
       </Button>
     </div>
   );
 
   const imageBlock = (
     <div className="product-card__image">
-      <span className="product-card__badge">{badge}</span>
+      <span
+        className={`product-card__badge${!available ? " product-card__badge--unavailable" : ""}`}
+      >
+        {badge}
+      </span>
       <span className="product-card__emoji">{emoji}</span>
       <span className="product-card__image-label">{imageLabel}</span>
     </div>
@@ -93,14 +81,16 @@ export default function ProductCard({
     </>
   );
 
+  const cardClass = `product-card${!available ? " product-card--unavailable" : ""}${detailPath ? " product-card--has-detail" : ""}`;
+
   if (detailPath) {
     return (
-      <article className="product-card product-card--has-detail">
+      <article className={cardClass}>
         <Link to={detailPath} className="product-card__detail-link">
           {imageBlock}
           <div className="product-card__body product-card__body--linked">
             {bodyBlock}
-            <span className="product-card__view-detail">View Details →</span>
+            <span className="product-card__view-detail">{t("products.viewDetails")}</span>
           </div>
         </Link>
         <div className="product-card__footer">{cartControls}</div>
@@ -109,7 +99,7 @@ export default function ProductCard({
   }
 
   return (
-    <div className="product-card">
+    <div className={cardClass}>
       {imageBlock}
       <div className="product-card__body">
         {bodyBlock}

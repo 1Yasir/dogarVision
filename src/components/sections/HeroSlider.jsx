@@ -1,38 +1,41 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { products } from "../../data/siteData";
+import { heroSlideGroups } from "../../data/heroSlides";
 import { useCart } from "../../context/CartContext";
+import { useLanguage } from "../../context/LanguageContext";
 import Button from "../common/Button";
 
-const slides = [
-  {
-    id: "poultry",
-    productId: "eggs",
-    badge: "Farm Fresh · Daily Delivery",
-    title: "Fresh, Healthy & Premium",
-    highlight: "Poultry Products",
-    subtitle:
-      "High-quality chicken, organic eggs, and day-old chicks raised with the highest biosecurity and hygiene standards.",
-    emoji: "🐔🥚",
-    theme: "hero-slider__slide--poultry",
-  },
-  {
-    id: "achar",
-    productId: "achar",
-    badge: "New Launch",
-    title: "100% Homemade & Premium",
-    highlight: "Achar",
-    subtitle:
-      "Traditional family recipes, sun-ripened ingredients, and zero artificial preservatives — crafted in small batches for authentic taste.",
-    emoji: "🫙🌶️",
-    theme: "hero-slider__slide--achar",
-  },
-];
-
 const INTERVAL_MS = 3000;
-const extendedSlides = [...slides, slides[0]];
 
 export default function HeroSlider() {
   const { addToCart } = useCart();
+  const { t } = useLanguage();
+
+  const slides = useMemo(() => {
+    return heroSlideGroups
+      .filter((group) =>
+        products.some(
+          (p) => group.categories.includes(p.category) && p.available
+        )
+      )
+      .map((group) => {
+        const product = products.find((p) => p.id === group.productId);
+        const copy = t(`hero.slides.${group.translationKey}`);
+        return {
+          ...group,
+          badge: copy.badge,
+          title: copy.title,
+          highlight: copy.highlight,
+          subtitle: copy.subtitle,
+          product,
+        };
+      });
+  }, [t]);
+
+  const slideCount = slides.length;
+  const extendedSlides =
+    slideCount > 1 ? [...slides, slides[0]] : slides.length ? slides : [];
+
   const [trackIndex, setTrackIndex] = useState(0);
   const [enableTransition, setEnableTransition] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
@@ -40,7 +43,16 @@ export default function HeroSlider() {
     () => typeof document !== "undefined" && !document.hidden
   );
 
-  const activeIndex = trackIndex % slides.length;
+  const activeIndex = slideCount > 0 ? trackIndex % slideCount : 0;
+  const isAcharActive = slides[activeIndex]?.id === "achar";
+
+  useEffect(() => {
+    setTrackIndex(0);
+    setEnableTransition(false);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setEnableTransition(true));
+    });
+  }, [slideCount]);
 
   useEffect(() => {
     const handleVisibility = () => {
@@ -52,7 +64,9 @@ export default function HeroSlider() {
         return;
       }
 
-      setTrackIndex((prev) => prev % slides.length);
+      if (slideCount > 0) {
+        setTrackIndex((prev) => prev % slideCount);
+      }
       setEnableTransition(false);
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -64,10 +78,10 @@ export default function HeroSlider() {
 
     document.addEventListener("visibilitychange", handleVisibility);
     return () => document.removeEventListener("visibilitychange", handleVisibility);
-  }, []);
+  }, [slideCount]);
 
   useEffect(() => {
-    if (isPaused || !isTabVisible) return;
+    if (isPaused || !isTabVisible || slideCount <= 1) return;
 
     const timer = setInterval(() => {
       setEnableTransition(true);
@@ -75,23 +89,24 @@ export default function HeroSlider() {
     }, INTERVAL_MS);
 
     return () => clearInterval(timer);
-  }, [isPaused, isTabVisible]);
+  }, [isPaused, isTabVisible, slideCount]);
 
   const handleTransitionEnd = useCallback(
     (event) => {
       if (
         event.target !== event.currentTarget ||
-        event.propertyName !== "transform"
+        event.propertyName !== "transform" ||
+        slideCount <= 1
       ) {
         return;
       }
 
-      if (trackIndex === slides.length) {
+      if (trackIndex === slideCount) {
         setEnableTransition(false);
         setTrackIndex(0);
       }
     },
-    [trackIndex]
+    [trackIndex, slideCount]
   );
 
   useEffect(() => {
@@ -108,19 +123,20 @@ export default function HeroSlider() {
     setTrackIndex(index);
   };
 
-  const handleOrderNow = (productId) => {
-    const product = products.find((p) => p.id === productId);
-    if (!product) return;
+  const handleOrderNow = (product) => {
+    if (!product?.available) return;
 
     const quantity =
       product.unitType === "kg" ? (product.kgOptions?.[0] ?? 0.5) : 1;
     addToCart(product, quantity);
   };
 
+  if (slideCount === 0) return null;
+
   return (
     <section
       id="home"
-      className={`hero-slider ${activeIndex === 1 ? "hero-slider--achar-active" : ""}`}
+      className={`hero-slider ${isAcharActive ? "hero-slider--achar-active" : ""}`}
       aria-label="Featured banners"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -150,9 +166,9 @@ export default function HeroSlider() {
                   <Button
                     type="button"
                     variant="primary"
-                    onClick={() => handleOrderNow(slide.productId)}
+                    onClick={() => handleOrderNow(slide.product)}
                   >
-                    Order Now
+                    {t("hero.orderNow")}
                   </Button>
                 </div>
                 <div className="hero-slider__visual" aria-hidden="true">
@@ -164,18 +180,20 @@ export default function HeroSlider() {
         </div>
       </div>
 
-      <div className="hero-slider__dots">
-        {slides.map((slide, index) => (
-          <button
-            key={slide.id}
-            type="button"
-            className={`hero-slider__dot ${index === activeIndex ? "hero-slider__dot--active" : ""}`}
-            onClick={() => goToSlide(index)}
-            aria-label={`Go to slide ${index + 1}: ${slide.highlight}`}
-            aria-current={index === activeIndex ? "true" : undefined}
-          />
-        ))}
-      </div>
+      {slideCount > 1 && (
+        <div className="hero-slider__dots">
+          {slides.map((slide, index) => (
+            <button
+              key={slide.id}
+              type="button"
+              className={`hero-slider__dot ${index === activeIndex ? "hero-slider__dot--active" : ""}`}
+              onClick={() => goToSlide(index)}
+              aria-label={`Go to slide ${index + 1}: ${slide.highlight}`}
+              aria-current={index === activeIndex ? "true" : undefined}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

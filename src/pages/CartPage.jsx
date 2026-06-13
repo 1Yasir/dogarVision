@@ -5,8 +5,11 @@ import WhatsAppFloat from "../components/common/WhatsAppFloat";
 import CartContent from "../components/cart/CartContent";
 import SectionTitle from "../components/common/SectionTitle";
 import Breadcrumbs from "../components/common/Breadcrumbs";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function CartPage() {
+  const { t } = useLanguage();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -19,15 +22,15 @@ export default function CartPage() {
         <div className="container">
           <Breadcrumbs
             items={[
-              { label: "Home", to: "/" },
-              { label: "Cart", to: "/cart" },
+              { label: t("cart.breadcrumbHome"), to: "/" },
+              { label: t("cart.breadcrumbCart"), to: "/cart" },
             ]}
           />
 
           <SectionTitle
-            label="Live Billing"
-            title="Your Cart & Checkout"
-            desc="Review your order, adjust quantities, and place your order via WhatsApp with live bill calculation."
+            label={t("cart.label")}
+            title={t("cart.title")}
+            desc={t("cart.desc")}
           />
 
           <div className="cart-page__panel">

@@ -1,20 +1,28 @@
 import { features } from "../../data/siteData";
+import { useLanguage } from "../../context/LanguageContext";
 import SectionTitle from "../common/SectionTitle";
 import FeatureCard from "./FeatureCard";
 
 export default function AboutSection() {
+  const { t } = useLanguage();
+
   return (
     <section id="about" className="section section--alt">
       <div className="container">
         <SectionTitle
-          label="About Us"
-          title="Why Choose Our Products?"
-          desc="Hard work, strict bio-security, and high-quality feed ensure that our poultry is completely healthy and organic. We serve wholesale buyers, grocery stores, restaurants, and direct consumers."
+          label={t("about.label")}
+          title={t("about.title")}
+          desc={t("about.desc")}
         />
 
         <div className="features-grid">
-          {features.map((f) => (
-            <FeatureCard key={f.title} {...f} />
+          {features.map(({ key, icon }) => (
+            <FeatureCard
+              key={key}
+              icon={icon}
+              title={t(`about.features.${key}.title`)}
+              desc={t(`about.features.${key}.desc`)}
+            />
           ))}
         </div>
       </div>
