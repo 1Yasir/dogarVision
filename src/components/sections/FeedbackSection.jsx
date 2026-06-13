@@ -142,7 +142,7 @@ export default function FeedbackSection() {
                   name="review"
                   required
                   rows={4}
-                  placeholder="Tell us about your experience with our poultry products..."
+                  placeholder="Tell us about your experience with our natural products..."
                   value={form.review}
                   onChange={handleChange}
                 />

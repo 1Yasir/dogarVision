@@ -35,7 +35,7 @@ export const translations = {
     about: {
       label: "About Us",
       title: "Why Choose Our Products?",
-      desc: "Hard work, strict bio-security, and high-quality feed ensure that our poultry is completely healthy and organic. We serve wholesale buyers, grocery stores, restaurants, and direct consumers.",
+      desc: "Hard work, strict bio-security, and high-quality feed ensure that all our poultry and organic farm-fresh products are completely healthy, pure, and natural. We serve wholesale buyers, grocery stores, restaurants, and direct consumers.",
       features: {
         biosecurity: {
           title: "Biosecurity & Hygiene",
@@ -61,6 +61,7 @@ export const translations = {
         chicken: "Chicken",
         chicks: "Chicks",
         achar: "Achar",
+        dairy: "Dairy",
       },
       comingSoon: "Coming Soon",
       addToCart: "Add to Cart",
@@ -90,6 +91,18 @@ export const translations = {
           desc: "100% homemade pickles prepared with premium spices and fresh ingredients. No artificial colors or preservatives — bold, authentic flavor in every jar.",
           badge: "New Launch",
           imageLabel: "Homemade Achar",
+        },
+        milk: {
+          name: "Premium Fresh Milk",
+          desc: "100% pure, farm-fresh milk from healthy, grass-fed cows. Rich in nutrients and free from artificial additives or preservatives.",
+          badge: "Coming Soon",
+          imageLabel: "Fresh Milk",
+        },
+        ghee: {
+          name: "Pure Desi Ghee",
+          desc: "Traditional homemade desi ghee prepared using the bilona method from pure buffalo milk. Rich aroma, golden color, and authentic taste.",
+          badge: "Coming Soon",
+          imageLabel: "Desi Ghee",
         },
       },
     },
@@ -165,7 +178,7 @@ export const translations = {
     about: {
       label: "Hamare Baare",
       title: "Hamare Products Kyun Chunein?",
-      desc: "Mehnat, sakht bio-security, aur acha feed hamari poultry ko mukammal sehatmand aur organic banata hai. Hum wholesale buyers, dukaan, restaurants aur ghar walon ko serve karte hain.",
+      desc: "Mehnat, sakht bio-security, aur acha feed hamari poultry aur organic farm-fresh products ko mukammal sehatmand, pure aur natural banata hai. Hum wholesale buyers, dukaan, restaurants aur ghar walon ko serve karte hain.",
       features: {
         biosecurity: {
           title: "Bio-Security aur Safai",
@@ -191,6 +204,7 @@ export const translations = {
         chicken: "Murghi",
         chicks: "Choozay",
         achar: "Achar",
+        dairy: "Dairy",
       },
       comingSoon: "Jald Aa Raha Hai",
       addToCart: "Cart Mein Dalen",
@@ -220,6 +234,18 @@ export const translations = {
           desc: "100% ghar ka bana achar premium masalon aur taza ingredients se. Koi artificial rang ya preservative nahi — har jar mein asli taste.",
           badge: "Naya Launch",
           imageLabel: "Ghar Ka Achar",
+        },
+        milk: {
+          name: "Premium Fresh Milk",
+          desc: "100% shudh, farm se taza doodh sehatmand, ghaas khane wali gayon se. Ghizaiyat se bharpoor aur koi artificial cheez nahi.",
+          badge: "Jald Aa Raha Hai",
+          imageLabel: "Taza Doodh",
+        },
+        ghee: {
+          name: "Pure Desi Ghee",
+          desc: "Purani tarika se ghar ka bana desi ghee bilona method se shudh bhains ke doodh se. Khushboo, sona rang, aur asli taste.",
+          badge: "Jald Aa Raha Hai",
+          imageLabel: "Desi Ghee",
         },
       },
     },
@@ -295,7 +321,7 @@ export const translations = {
     about: {
       label: "ہمارے بارے",
       title: "ہماری مصنوعات کیوں چنیں؟",
-      desc: "محنت، سخت حفاظتی اقدامات، اور اچھا خوراک ہماری پولٹری کو مکمل صحت مند اور نامیاتی بناتے ہیں۔ ہم تھوک خریداروں، دکانوں، ریستورانوں اور گھریلو صارفین کو خدمت فراہم کرتے ہیں۔",
+      desc: "محنت، سخت حفاظتی اقدامات، اور اچھا خوراک ہماری پولٹری اور نامیاتی فارم سے تازہ مصنوعات کو مکمل صحت مند، خالص اور قدرتی بناتے ہیں۔ ہم تھوک خریداروں، دکانوں، ریستورانوں اور گھریلو صارفین کو خدمت فراہم کرتے ہیں۔",
       features: {
         biosecurity: {
           title: "حفاظت اور صفائی",
@@ -321,6 +347,7 @@ export const translations = {
         chicken: "مرغی",
         chicks: "چوزے",
         achar: "اچار",
+        dairy: "ڈیری",
       },
       comingSoon: "جلد آ رہا ہے",
       addToCart: "کارٹ میں ڈالیں",
@@ -350,6 +377,18 @@ export const translations = {
           desc: "100٪ گھر کا بنا اچار پریمیم مصالوں اور تازہ اجزاء سے۔ کوئی مصنوعی رنگ یا پرزرویٹو نہیں — ہر جار میں اصلی ذائقہ۔",
           badge: "نیا لانچ",
           imageLabel: "گھر کا اچار",
+        },
+        milk: {
+          name: "پریمیم تازہ دودھ",
+          desc: "100٪ خالص، فارم سے تازہ دودھ صحت مند، گھاس کھانے والی گائوں سے۔ غذائی اجزاء سے بھرپور اور کوئی مصنوعی چیز نہیں۔",
+          badge: "جلد آ رہا ہے",
+          imageLabel: "تازہ دودھ",
+        },
+        ghee: {
+          name: "خالص دیسی گھی",
+          desc: "روایتی طریقے سے گھر کا بنا دیسی گھی بیلونا طریقہ سے خالص بھینس کے دودھ سے۔ خوشبو، سنہری رنگ، اور اصلی ذائقہ۔",
+          badge: "جلد آ رہا ہے",
+          imageLabel: "دیسی گھی",
         },
       },
     },

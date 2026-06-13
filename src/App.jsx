@@ -5,6 +5,7 @@ import { LanguageProvider } from "./context/LanguageContext";
 import HomePage from "./pages/HomePage";
 import CartPage from "./pages/CartPage";
 import ProductDetail from "./pages/ProductDetail";
+import CartDrawer from "./components/cart/CartDrawer";
 import "./styles/poultry.css";
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
               <Route path="/cart" element={<CartPage />} />
               <Route path="/product/:productId" element={<ProductDetail />} />
             </Routes>
+            <CartDrawer />
           </BrowserRouter>
         </CartProvider>
       </LanguageProvider>

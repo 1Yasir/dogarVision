@@ -85,6 +85,35 @@ export const products = [
     detailPath: "/product/achar",
     available: true,
   },
+  {
+    id: "milk",
+    category: "dairy",
+    name: "Premium Fresh Milk",
+    desc: "100% pure, farm-fresh milk from healthy, grass-fed cows. Rich in nutrients and free from artificial additives or preservatives.",
+    price: "Rs. 180 / liter",
+    unitPrice: 180,
+    unit: "liter",
+    unitType: "unit",
+    badge: "Coming Soon",
+    imageLabel: "Fresh Milk",
+    emoji: "🥛",
+    available: true,
+  },
+  {
+    id: "ghee",
+    category: "dairy",
+    name: "Pure Desi Ghee",
+    desc: "Traditional homemade desi ghee prepared using the bilona method from pure buffalo milk. Rich aroma, golden color, and authentic taste.",
+    price: "Rs. 3500 / kg",
+    unitPrice: 3500,
+    unit: "kg",
+    unitType: "kg",
+    kgOptions: [0.5, 1, 2],
+    badge: "Coming Soon",
+    imageLabel: "Desi Ghee",
+    emoji: "🧈",
+    available: true,
+  },
 ];
 
 export function getSortedProducts(list = products) {
@@ -97,6 +126,7 @@ export const productFilters = [
   { id: "chicken", label: "Chicken" },
   { id: "chicks", label: "Chicks" },
   { id: "achar", label: "Achar" },
+  { id: "dairy", label: "Dairy" },
 ];
 
 export const contactInfo = {

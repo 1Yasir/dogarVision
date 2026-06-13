@@ -19,7 +19,7 @@ export default function ProductCard({
   emoji,
   available = true,
 }) {
-  const { addToCart } = useCart();
+  const { addToCart, openCart } = useCart();
   const { t } = useLanguage();
   const [selectedKg] = useState(kgOptions[0] ?? 1);
   const [addedFeedback, setAddedFeedback] = useState(false);
@@ -42,6 +42,7 @@ export default function ProductCard({
 
     const quantity = isKgProduct ? selectedKg : 1;
     addToCart({ id, name, emoji, unitPrice, unit, unitType }, quantity);
+    openCart();
     setAddedFeedback(true);
     setTimeout(() => setAddedFeedback(false), 1500);
   };

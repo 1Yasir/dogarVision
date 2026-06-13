@@ -4,6 +4,7 @@ const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   const addToCart = useCallback((product, quantity = 1) => {
     setItems((prev) => {
@@ -53,6 +54,18 @@ export function CartProvider({ children }) {
     setItems([]);
   }, []);
 
+  const toggleCart = useCallback(() => {
+    setIsCartOpen((prev) => !prev);
+  }, []);
+
+  const openCart = useCallback(() => {
+    setIsCartOpen(true);
+  }, []);
+
+  const closeCart = useCallback(() => {
+    setIsCartOpen(false);
+  }, []);
+
   const totalBill = useMemo(
     () => items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
     [items]
@@ -72,6 +85,10 @@ export function CartProvider({ children }) {
       clearCart,
       totalBill,
       itemCount,
+      isCartOpen,
+      toggleCart,
+      openCart,
+      closeCart,
     }),
     [
       items,
@@ -81,6 +98,10 @@ export function CartProvider({ children }) {
       clearCart,
       totalBill,
       itemCount,
+      isCartOpen,
+      toggleCart,
+      openCart,
+      closeCart,
     ]
   );
 

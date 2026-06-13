@@ -1,12 +1,16 @@
-import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { formatPrice } from "../../utils/cartHelpers";
 
 export default function CartFab() {
-  const { itemCount, totalBill } = useCart();
+  const { itemCount, totalBill, openCart } = useCart();
 
   return (
-    <Link to="/cart" className="cart-fab" aria-label="Go to cart">
+    <button 
+      type="button"
+      className="cart-fab" 
+      aria-label="Open cart"
+      onClick={openCart}
+    >
       <span className="cart-fab__icon">🛒</span>
       {itemCount > 0 && (
         <span className="cart-fab__badge">{itemCount}</span>
@@ -14,6 +18,6 @@ export default function CartFab() {
       {itemCount > 0 && (
         <span className="cart-fab__total">{formatPrice(totalBill)}</span>
       )}
-    </Link>
+    </button>
   );
 }
