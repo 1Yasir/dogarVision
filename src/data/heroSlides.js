@@ -15,4 +15,12 @@ export const heroSlideGroups = [
     theme: "hero-slider__slide--poultry",
     translationKey: "poultry",
   },
+  {
+    id: "dairy",
+    productId: "milk",
+    categories: ["dairy"],
+    emoji: "🥛🧈",
+    theme: "hero-slider__slide--achar",
+    translationKey: "dairy",
+  },
 ];

@@ -17,18 +17,25 @@ export const translations = {
       orderNow: "Order Now",
       slides: {
         achar: {
-          badge: "New Launch",
-          title: "100% Homemade & Premium",
+          badge: "Premium Quality",
+          title: "100% Homemade & Authentic",
           highlight: "Achar",
           subtitle:
             "Traditional family recipes, sun-ripened ingredients, and zero artificial preservatives — crafted in small batches for authentic taste.",
         },
         poultry: {
-          badge: "Farm Fresh · Daily Delivery",
-          title: "Fresh, Healthy & Premium",
+          badge: "Farm Fresh · Premium Quality",
+          title: "Fresh, Healthy & Organic",
           highlight: "Poultry Products",
           subtitle:
-            "High-quality chicken, organic eggs, and day-old chicks raised with the highest biosecurity and hygiene standards.",
+            "High-quality chicken, organic eggs, and day-old chicks raised with the highest biosecurity and hygiene standards for your family.",
+        },
+        dairy: {
+          badge: "Pure & Organic",
+          title: "Fresh Milk & Traditional",
+          highlight: "Dairy Products",
+          subtitle:
+            "Pure, farm-fresh milk and traditional desi ghee prepared with the highest hygiene standards. Rich in nutrients and authentic taste.",
         },
       },
     },
@@ -160,18 +167,25 @@ export const translations = {
       orderNow: "Abhi Order Karein",
       slides: {
         achar: {
-          badge: "Naya Launch",
-          title: "100% Ghar Ka Bana Premium",
+          badge: "Premium Quality",
+          title: "100% Ghar Ka Bana Asli",
           highlight: "Achar",
           subtitle:
             "Purani family recipes, dhup mein paka hua maal, aur koi artificial cheez nahi — choti batches mein asli taste.",
         },
         poultry: {
-          badge: "Farm Fresh · Rozana Delivery",
-          title: "Taza, Sehatmand aur Premium",
+          badge: "Farm Fresh · Premium Quality",
+          title: "Taza, Sehatmand aur Organic",
           highlight: "Poultry Products",
           subtitle:
             "High-quality chicken, organic eggs, aur day-old chicks jo sab se behtareen bio-security aur safai ke sath palay jate hain.",
+        },
+        dairy: {
+          badge: "Shudh aur Organic",
+          title: "Taza Doodh aur Purana",
+          highlight: "Dairy Products",
+          subtitle:
+            "Shudh, farm se taza doodh aur purani tarika ka desi ghee behtareen hygiene ke sath. Ghizaiyat se bharpoor aur asli taste.",
         },
       },
     },
@@ -303,18 +317,25 @@ export const translations = {
       orderNow: "ابھی آرڈر کریں",
       slides: {
         achar: {
-          badge: "نیا لانچ",
-          title: "100٪ گھر کا بنا پریمیم",
+          badge: "پریمیم کوالٹی",
+          title: "100٪ گھر کا بنا اصل",
           highlight: "اچار",
           subtitle:
             "روایتی خاندانی ترکیبیں، دھوپ میں پکے ہوئے اجزاء، اور کوئی مصنوعی چیز نہیں — چھوٹی مقدار میں اصلی ذائقہ۔",
         },
         poultry: {
-          badge: "فارم سے تازہ · روزانہ ڈیلیوری",
-          title: "تازہ، صحت مند اور پریمیم",
+          badge: "فارم سے تازہ · پریمیم کوالٹی",
+          title: "تازہ، صحت مند اور نامیاتی",
           highlight: "پولٹری مصنوعات",
           subtitle:
             "اعلیٰ معیار کی مرغی، نامیاتی انڈے، اور ایک دن کے چوزے جو بہترین حفاظتی اور صفائی کے معیار پر پالے جاتے ہیں۔",
+        },
+        dairy: {
+          badge: "خالص اور نامیاتی",
+          title: "تازہ دودھ اور روایتی",
+          highlight: "ڈیری مصنوعات",
+          subtitle:
+            "خالص، فارم سے تازہ دودھ اور روایتی دیسی گھی بہترین حفاظتی معیار کے ساتھ۔ غذائی اجزاء سے بھرپور اور اصلی ذائقہ۔",
         },
       },
     },

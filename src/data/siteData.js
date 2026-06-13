@@ -39,7 +39,7 @@ export const products = [
     badge: "Best Seller",
     imageLabel: "Fresh Eggs",
     emoji: "🥚",
-    available: false,
+    available: true,
   },
   {
     id: "chicken",
@@ -53,7 +53,7 @@ export const products = [
     badge: "Premium",
     imageLabel: "Broiler Chicken",
     emoji: "🍗",
-    available: false,
+    available: true,
   },
   {
     id: "chicks",
@@ -94,10 +94,10 @@ export const products = [
     unitPrice: 180,
     unit: "liter",
     unitType: "unit",
-    badge: "Coming Soon",
+    badge: "Premium",
     imageLabel: "Fresh Milk",
     emoji: "🥛",
-    available: true,
+    available: false,
   },
   {
     id: "ghee",
@@ -109,10 +109,10 @@ export const products = [
     unit: "kg",
     unitType: "kg",
     kgOptions: [0.5, 1, 2],
-    badge: "Coming Soon",
+    badge: "New Launch",
     imageLabel: "Desi Ghee",
     emoji: "🧈",
-    available: true,
+    available: false,
   },
 ];
 
