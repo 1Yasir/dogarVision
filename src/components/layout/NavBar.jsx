@@ -106,13 +106,13 @@ export default function NavBar() {
 
         <div className="nav__controls">
           <select
-            className="nav__lang-select"
+            className="nav__lang-select bg-white text-slate-800 dark:bg-slate-800 dark:text-white border border-slate-300 dark:border-slate-600"
             value={lang}
             onChange={(e) => setLang(e.target.value)}
             aria-label="Select language"
           >
             {languages.map(({ code, label }) => (
-              <option key={code} value={code}>
+              <option key={code} value={code} className="bg-white text-slate-800 dark:bg-slate-800 dark:text-white border border-slate-300 dark:border-slate-600">
                 {label}
               </option>
             ))}

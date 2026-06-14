@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { contactInfo } from "../../data/siteData";
+import { contactInfo, products } from "../../data/siteData";
 import { useCart } from "../../context/CartContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { db } from "../../firebase";
@@ -25,6 +25,14 @@ const initialCheckout = {
 
 function CartItemRow({ item, onUpdate, onRemove, t }) {
   const lineTotal = item.unitPrice * item.quantity;
+  const product = products.find((p) => p.id === item.productId);
+  const stockCount = product?.stockCount || 999;
+
+  const handleQuantityChange = (e) => {
+    const value = parseInt(e.target.value) || 1;
+    const newQuantity = Math.max(1, Math.min(value, stockCount));
+    onUpdate(item.productId, newQuantity - item.quantity);
+  };
 
   return (
     <div className="cart-item cart-item--drawer">
@@ -44,9 +52,15 @@ function CartItemRow({ item, onUpdate, onRemove, t }) {
             >
               −
             </button>
-            <span className="cart-item__qty-value">
-              {formatQuantity(item)}
-            </span>
+            <input
+              type="number"
+              className="cart-item__qty-input"
+              value={item.quantity}
+              onChange={handleQuantityChange}
+              min="1"
+              max={stockCount}
+              aria-label={`${t("cart.quantity")} ${item.name}`}
+            />
             <button
               type="button"
               className="cart-item__qty-btn"
