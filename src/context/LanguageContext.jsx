@@ -13,7 +13,10 @@ export function LanguageProvider({ children }) {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, lang);
     document.documentElement.lang = lang === "ur" ? "ur" : lang === "roman" ? "ur-Latn" : "en";
-    document.documentElement.dir = lang === "ur" ? "rtl" : "ltr";
+    
+    // 🟢 FIXED: Urdu select hone par bhi direction ko hamesha "ltr" rakha hai
+    // Is se dots, brackets, aur sliders kabhi apni jagah se nahi hilenge aur layout sahi rahega
+    document.documentElement.dir = "ltr"; 
   }, [lang]);
 
   const t = (key) => getTranslation(lang, key);
