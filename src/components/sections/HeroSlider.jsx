@@ -9,12 +9,10 @@ const INTERVAL_MS = 3000;
 
 export default function HeroSlider() {
   const { addToCart } = useCart();
-  const { t, lang } = useLanguage(); // 🟢 lang ko bhi context se nikal liya
+  const { t, lang } = useLanguage(); 
 
-  // Urdu/RTL check karne ke liye safe logic
   const isRTL = lang === "ur";
 
-  // 🟢 FIXED LOGIC: Agar Urdu ka data translation file mein nahi bhi milta, toh slider gayab nahi hoga
   const slides = useMemo(() => {
     return heroSlideGroups
       .map((group) => {
@@ -24,10 +22,8 @@ export default function HeroSlider() {
 
         if (!availableProduct) return null;
 
-        // Active language ka data uthayein
         const copy = t(`hero.slides.${group.translationKey}`);
 
-        // 🟢 HARDCODED FALLBACKS: Agar translation file load na ho ya key galat ho, toh yeh text show hoga
         const defaultContent = {
           achar: {
             badge: "100% Homemade",
@@ -155,7 +151,6 @@ export default function HeroSlider() {
     addToCart(product, quantity);
   };
 
-  // 🟢 FIXED LAYOUT: Layout collapsed loading state agar kisi wajah se slide length zero ho jaye
   if (slideCount === 0) {
     return (
       <section id="home" className="hero-slider" style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f9f9f9" }}>
@@ -166,10 +161,7 @@ export default function HeroSlider() {
     );
   }
 
-  // 🟢 FIXED CSS TRANSLATE FOR RTL (URDU): Urdu mein rukh badal jata hai, isliye sign flip kiya
-  const translateValue =  -(trackIndex * 100);
-
-
+  const translateValue = -(trackIndex * 100);
 
   return (
     <section
@@ -185,37 +177,54 @@ export default function HeroSlider() {
           style={{ transform: `translateX(${translateValue}%)` }}
           onTransitionEnd={handleTransitionEnd}
         >
-          {extendedSlides.map((slide, index) => (
-            <article
-              key={`${slide.id}-${index}`}
-              className={`hero-slider__slide ${slide.theme}`}
-              aria-hidden={index !== trackIndex}
-            >
-              <div className="container hero-slider__content">
-                <div className="hero-slider__text">
-                  <div className="hero-slider__badge">
-                    <span className="hero-slider__badge-dot" />
-                    {slide.badge}
+          {extendedSlides.map((slide, index) => {
+            // 🟢 AUTOMATIC DISCOUNT CHECK: Slide ke linked product se direct data check ho raha hai
+            const productDiscount = slide.product?.discountPercentage ?? 0;
+            const hasDiscount = productDiscount > 0;
+
+            return (
+              <article
+                key={`${slide.id}-${index}`}
+                className={`hero-slider__slide ${slide.theme}`}
+                aria-hidden={index !== trackIndex}
+              >
+                <div className="container hero-slider__content">
+                  <div className="hero-slider__text">
+                    <div className="hero-slider__badge">
+                      <span className="hero-slider__badge-dot" />
+                      {slide.badge}
+                    </div>
+                    <h1 className="hero-slider__title">
+                      {slide.title} <span>{slide.highlight}</span>
+                    </h1>
+                    <p className="hero-slider__subtitle">{slide.subtitle}</p>
+                    
+                    {/* Actions container built with flex layout to handle elements in one row */}
+                    <div className="hero-slider__actions" style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "10px", flexWrap: "wrap" }}>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        onClick={() => handleOrderNow(slide)}
+                      >
+                        {t("hero.orderNow") || "Order Now"}
+                      </Button>
+
+                    </div>
                   </div>
-                  <h1 className="hero-slider__title">
-                    {slide.title} <span>{slide.highlight}</span>
-                  </h1>
-                  <p className="hero-slider__subtitle">{slide.subtitle}</p>
-                  
-                  <Button
-                    type="button"
-                    variant="primary"
-                    onClick={() => handleOrderNow(slide)}
-                  >
-                    {t("hero.orderNow") || "Order Now"}
-                  </Button>
+                  <div className="hero-slider__visual" aria-hidden="true">
+                    {hasDiscount && (
+                        <span 
+                          className="hero-slider__discount-tag" 
+                         >
+                          🔥 {productDiscount}% OFF
+                        </span>
+                      )}
+                    <span className="hero-slider__emoji">{slide.emoji}</span>
+                  </div>
                 </div>
-                <div className="hero-slider__visual" aria-hidden="true">
-                  <span className="hero-slider__emoji">{slide.emoji}</span>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </div>
 

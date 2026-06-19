@@ -18,6 +18,7 @@ export default function ProductCard({
   kgOptions = [],
   emoji,
   available = true,
+  discountPercentage = 0,
 }) {
   const { addToCart, openCart } = useCart();
   const { t } = useLanguage();
@@ -28,16 +29,22 @@ export default function ProductCard({
   
   const name = itemCopy.name;
   const desc = itemCopy.desc;
-
-  // 📝 FIXED LOGIC: Agar available false hai toh sirf Coming Soon aaye, nahi toh translation file ka badge aaye
   const badge = available ? itemCopy.badge : t("products.comingSoon");
-  
   const imageLabel = itemCopy.imageLabel;
 
+  // 🟢 NEW GLOBAL LOGIC: Yeh har unit par kaam karegi (kg, unit, liter, crate)
+  const hasDiscount = discountPercentage > 0;
   const isKgProduct = unitType === "kg";
-  const displayPrice = isKgProduct
-    ? `${formatPrice(unitPrice * selectedKg)} (${selectedKg} kg)`
-    : price;
+  
+  // Base Price hamesha number wale 'unitPrice' se calculate hogi. 
+  // Agar kg wala product hai toh select kiye gaye weight se multiply hoga, nahi toh 1 se multiply hoga (jaise eggs, milk, chicken)
+  const multiplier = isKgProduct ? selectedKg : 1;
+  const basePrice = unitPrice * multiplier;
+  
+  // Final discounted price calculation
+  const finalPrice = hasDiscount 
+    ? basePrice - (basePrice * discountPercentage) / 100 
+    : basePrice;
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -53,7 +60,7 @@ export default function ProductCard({
 
   const handleCardClick = (e) => {
     if (!available) {
-      e.preventDefault(); // Un-available product par page change nahi hoga
+      e.preventDefault();
       alert(`Maazrat! ${name} abhi dastayab nahi hai. Yeh jald hi un-qarib lounch ki jaye gi.`);
     }
   };
@@ -85,11 +92,35 @@ export default function ProductCard({
     </div>
   );
 
+  // 🟢 DYNAMIC DISPLAY BLOCK: Pura price layout bina error ke dunya ke har unit par fit baithega
   const bodyBlock = (
     <>
       <h3 className="product-card__name">{name}</h3>
       <p className="product-card__desc">{desc}</p>
-      <p className="product-card__price">{displayPrice}</p>
+      
+      <div className="product-card__price-wrapper" style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", margin: "6px 0" }}>
+        {hasDiscount ? (
+          <>
+            {/* New Discounted Price */}
+            <p className="product-card__price" style={{ margin: 0, fontWeight: "bold" }}>
+              {isKgProduct ? `${formatPrice(finalPrice)} (${selectedKg} ${unit})` : `${formatPrice(finalPrice)} / ${unit}`}
+            </p>
+            {/* Old Price (Crossed out) */}
+            <span className="product-card__old-price" style={{ textDecoration: "line-through", color: "#888", fontSize: "0.85rem" }}>
+              {isKgProduct ? formatPrice(basePrice) : `${formatPrice(unitPrice)} / ${unit}`}
+            </span>
+            {/* Discount Percentage Tag */}
+            <span className="product-card__discount-badge" style={{ backgroundColor: "#e11d48", color: "#fff", fontSize: "0.75rem", padding: "2px 6px", borderRadius: "4px", fontWeight: "bold" }}>
+              {discountPercentage}% OFF
+            </span>
+          </>
+        ) : (
+          /* Normal Price if no discount */
+          <p className="product-card__price" style={{ margin: 0 }}>
+            {isKgProduct ? `${formatPrice(basePrice)} (${selectedKg} ${unit})` : `${formatPrice(unitPrice)} / ${unit}`}
+          </p>
+        )}
+      </div>
     </>
   );
 

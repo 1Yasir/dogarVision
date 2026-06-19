@@ -77,7 +77,7 @@ export const products = [
     imageLabel: "Day-Old Chicks",
     emoji: "🐣",
     available: false,
-    stockCount: 0,
+    stockCount: 120,
     discountPercentage: 0,
     detailPath: "/product/chicks",
   },
