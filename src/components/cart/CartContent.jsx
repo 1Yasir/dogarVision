@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { contactInfo } from "../../data/siteData";
+import { contactInfo, products } from "../../data/siteData";
 import { useCart } from "../../context/CartContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { db } from "../../firebase";
@@ -24,7 +24,13 @@ const initialCheckout = {
 };
 
 function CartItemRow({ item, onUpdate, onRemove, t }) {
-  const lineTotal = item.unitPrice * item.quantity;
+  const product = products.find((p) => p.id === item.productId);
+  const hasDiscount = product && product.discountPercentage > 0;
+  const finalUnitPrice = hasDiscount 
+    ? item.unitPrice * (1 - product.discountPercentage / 100) 
+    : item.unitPrice;
+
+  const lineTotal = finalUnitPrice * item.quantity;
 
   return (
     <div className="cart-item">
@@ -32,7 +38,18 @@ function CartItemRow({ item, onUpdate, onRemove, t }) {
       <div className="cart-item__info">
         <h4 className="cart-item__name">{item.name}</h4>
         <p className="cart-item__unit-price">
-          {formatPrice(item.unitPrice)} / {item.unit}
+          {hasDiscount ? (
+            <>
+              <span style={{ textDecoration: "line-through", color: "#888", marginRight: "8px" }}>
+                {formatPrice(item.unitPrice)}
+              </span>
+              <span style={{ color: "#2e7d32", fontWeight: "bold" }}>
+                {formatPrice(finalUnitPrice)}
+              </span>
+            </>
+          ) : (
+            formatPrice(item.unitPrice)
+          )} / {item.unit}
         </p>
         <div className="cart-item__qty-row">
           <div className="cart-item__qty-controls">
@@ -72,11 +89,21 @@ function CartItemRow({ item, onUpdate, onRemove, t }) {
 }
 
 export default function CartContent() {
-  const { items, updateQuantity, removeFromCart, totalBill, clearCart } =
+  // 📝 CHANGE 1: clearCart function ko useCart() se nikaal kar yahan active kiya taake order ke baad cart khaali ho sakay
+  const { items, updateQuantity, removeFromCart, clearCart } =
     useCart();
   const { t } = useLanguage();
   const [checkout, setCheckout] = useState(initialCheckout);
   const [submitting, setSubmitting] = useState(false);
+
+  const finalTotalBill = items.reduce((total, item) => {
+    const product = products.find((p) => p.id === item.productId);
+    const hasDiscount = product && product.discountPercentage > 0;
+    const finalUnitPrice = hasDiscount 
+      ? item.unitPrice * (1 - product.discountPercentage / 100) 
+      : item.unitPrice;
+    return total + (finalUnitPrice * item.quantity);
+  }, 0);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -101,24 +128,47 @@ export default function CartContent() {
     setSubmitting(true);
 
     try {
+      const processedItems = items.map((item) => {
+        const product = products.find((p) => p.id === item.productId);
+        const hasDiscount = product && product.discountPercentage > 0;
+        const finalUnitPrice = hasDiscount 
+          ? item.unitPrice * (1 - product.discountPercentage / 100) 
+          : item.unitPrice;
+
+        return {
+          productName: item.name,
+          quantity: formatQuantity(item),
+          subtotal: finalUnitPrice * item.quantity,
+        };
+      });
+
       await addDoc(collection(db, "orders"), {
         name: checkout.fullName.trim(),
         phone: checkout.phone.trim(),
         address: checkout.address.trim(),
-        items: items.map((item) => ({
-          productName: item.name,
-          quantity: formatQuantity(item),
-          subtotal: item.unitPrice * item.quantity,
-        })),
-        totalBill,
+        items: processedItems,
+        totalBill: finalTotalBill,
         createdAt: serverTimestamp(),
       });
 
-      const message = buildWhatsAppMessage(items, totalBill, checkout);
+      // WhatsApp ka message aur URL pehle generate kar lete hain
+      const message = buildWhatsAppMessage(items, finalTotalBill, checkout);
       const number = contactInfo.whatsapp.replace(/\D/g, "");
       const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+
+      // 📝 CHANGE 2: User ko success message/alert show kiya
+      alert("Shukriya! Aap ka order kamyabi se save ho gaya hai. Ab aap ko WhatsApp par redirect kiya ja raha hai.");
+
+      // 📝 CHANGE 3: Order successfully save hone ke baad input fields ko empty (reset) kar diya
+      setCheckout(initialCheckout);
+
+      // 📝 CHANGE 4: Cart mein se saari products ko ek dafa khatam (clear) kar diya
+      clearCart();
+
+      // WhatsApp open kiya
       window.open(url, "_blank", "noopener,noreferrer");
-    } catch {
+    } catch (error) {
+      console.error("Order error:", error); // 📝 CHANGE 5: Agar koi issue aaye to console mein dikhega debug karne ke liye
       alert(
         "Failed to save your order. Please try again or contact us on WhatsApp directly."
       );
@@ -162,7 +212,7 @@ export default function CartContent() {
           <span>
             {t("cart.subtotal")} ({items.length} {itemLabel})
           </span>
-          <span>{formatPrice(totalBill)}</span>
+          <span>{formatPrice(finalTotalBill)}</span>
         </div>
         <div className="cart-bill__row cart-bill__row--delivery">
           <span>{t("cart.delivery")}</span>
@@ -170,7 +220,7 @@ export default function CartContent() {
         </div>
         <div className="cart-bill__total">
           <span>{t("cart.totalBill")}</span>
-          <span className="cart-bill__total-amount">{formatPrice(totalBill)}</span>
+          <span className="cart-bill__total-amount">{formatPrice(finalTotalBill)}</span>
         </div>
       </div>
 

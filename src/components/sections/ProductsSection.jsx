@@ -16,7 +16,6 @@ export default function ProductsSection() {
     return getSortedProducts(list);
   }, [activeFilter]);
 
-  console.log(products)
 
   return (
     <section id="products" className="section">

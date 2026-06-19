@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { collection, onSnapshot, query, where } from "firebase/firestore"; // 🟢 FIXED: Firestore methods import kiye
+import { db } from "../firebase"; // 🟢 FIXED: Firebase config import kiya
 import NavBar from "../components/layout/NavBar";
 import Footer from "../components/layout/Footer";
 import CartFab from "../components/cart/CartFab";
@@ -15,15 +17,39 @@ export default function ProductDetail() {
   const { addToCart, openCart } = useCart();
   const { t } = useLanguage();
   const [quantity, setQuantity] = useState(1);
-  const [reviews] = useState([
-    { id: 1, name: "Ahmed Khan", rating: 5, comment: "Excellent quality! Very fresh and delicious." },
-    { id: 2, name: "Fatima Bibi", rating: 4, comment: "Good product, will order again." },
-    { id: 3, name: "Ali Hassan", rating: 5, comment: "Best in the market! Highly recommended." },
-  ]);
+  
+  // 🟢 FIXED: Hardcoded reviews ko khali state se badla aur loading lagaya
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [productId]);
+
+  // 🟢 FIXED: Database se live feedbacks load karne ke liye useEffect lagaya
+  useEffect(() => {
+    const q = query(collection(db, "feedbacks"), where("approved", "==", true));
+    
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const fetchedReviews = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          name: doc.data().name,
+          rating: doc.data().rating,
+          comment: doc.data().review, // Humare form mein name 'review' tha, yahan mapping de di
+        }));
+        setReviews(fetchedReviews);
+        setLoadingReviews(false);
+      },
+      (err) => {
+        console.error("Error loading reviews for product detail:", err);
+        setLoadingReviews(false);
+      }
+    );
+
+    return unsubscribe;
+  }, []);
 
   if (!product) {
     return <Navigate to="/" replace />;
@@ -161,22 +187,29 @@ export default function ProductDetail() {
             Customer Reviews <span>/ Khareedar ki Raaye</span>
           </h2>
           <div className="product-detail__reviews-list">
-            {reviews.map((review) => (
-              <article key={review.id} className="product-detail__review-card">
-                <div className="product-detail__review-header">
-                  <h3 className="product-detail__review-name">{review.name}</h3>
-                  <div className="product-detail__review-rating">
-                    {Array(review.rating).fill("⭐").join("")}
+            {/* 🟢 FIXED: Loading aur Empty state lagayi database logic ke mutabiq */}
+            {loadingReviews ? (
+              <p className="feedback__status">Loading database reviews...</p>
+            ) : reviews.length === 0 ? (
+              <p className="feedback__status" style={{ gridColumn: "1 / -1", width: "100%" }}>No reviews yet. Be the first to share your experience on home page!</p>
+            ) : (
+              reviews.map((review) => (
+                <article key={review.id} className="product-detail__review-card">
+                  <div className="product-detail__review-header">
+                    <h3 className="product-detail__review-name">{review.name}</h3>
+                    <div className="product-detail__review-rating">
+                      {Array(review.rating).fill("⭐").join("")}
+                    </div>
                   </div>
-                </div>
-                <p className="product-detail__review-comment">{review.comment}</p>
-              </article>
-            ))}
+                  <p className="product-detail__review-comment">{review.comment}</p>
+                </article>
+              ))
+            )}
           </div>
         </div>
       </section>
 
-      <section className="section product-detail__section">
+      {/* <section className="section product-detail__section">
         <div className="container">
           <h2 className="product-detail__section-title">
             Product Details <span>/ Tafseel</span>
@@ -185,7 +218,7 @@ export default function ProductDetail() {
             Learn more about our premium quality products and why customers trust DogarVision.
           </p>
         </div>
-      </section>
+      </section> */}
 
       <section className="product-detail__cta">
         <div className="container product-detail__cta-inner">

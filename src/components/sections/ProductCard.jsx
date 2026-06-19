@@ -25,9 +25,13 @@ export default function ProductCard({
   const [addedFeedback, setAddedFeedback] = useState(false);
 
   const itemCopy = t(`products.items.${id}`);
+  
   const name = itemCopy.name;
   const desc = itemCopy.desc;
+
+  // 📝 FIXED LOGIC: Agar available false hai toh sirf Coming Soon aaye, nahi toh translation file ka badge aaye
   const badge = available ? itemCopy.badge : t("products.comingSoon");
+  
   const imageLabel = itemCopy.imageLabel;
 
   const isKgProduct = unitType === "kg";
@@ -45,6 +49,13 @@ export default function ProductCard({
     openCart();
     setAddedFeedback(true);
     setTimeout(() => setAddedFeedback(false), 1500);
+  };
+
+  const handleCardClick = (e) => {
+    if (!available) {
+      e.preventDefault(); // Un-available product par page change nahi hoga
+      alert(`Maazrat! ${name} abhi dastayab nahi hai. Yeh jald hi un-qarib lounch ki jaye gi.`);
+    }
   };
 
   const cartControls = (
@@ -87,11 +98,13 @@ export default function ProductCard({
   if (detailPath) {
     return (
       <article className={cardClass}>
-        <Link to={detailPath} className="product-card__detail-link">
+        <Link to={detailPath} className="product-card__detail-link" onClick={handleCardClick}>
           {imageBlock}
           <div className="product-card__body product-card__body--linked">
             {bodyBlock}
-            <span className="product-card__view-detail">{t("products.viewDetails")}</span>
+            <span className="product-card__view-detail">
+              {available ? t("products.viewDetails") : t("products.comingSoon")}
+            </span>
           </div>
         </Link>
         <div className="product-card__footer">{cartControls}</div>

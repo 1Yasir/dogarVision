@@ -34,6 +34,7 @@ export default function FeedbackSection() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // 🟢 Kyunki reviews direct show ho rahe hain, query par 'approved == true' ab bhi kaam karega kyunki hum submit true hi kar rahe hain
     const q = query(collection(db, "feedbacks"), where("approved", "==", true));
     const unsubscribe = onSnapshot(
       q,
@@ -45,7 +46,7 @@ export default function FeedbackSection() {
         console.error("Firestore Error Detailed:", err);
         setError("Unable to load feedback. Please try again later.");
         setLoading(false);
-      },
+      }
     );
     return unsubscribe;
   }, []);
@@ -64,7 +65,7 @@ export default function FeedbackSection() {
         name: form.name.trim(),
         rating: Number(form.rating),
         review: form.review.trim(),
-        approved: true,
+        approved: true, // 🟢 Direct display ke liye pehle se hi true ja raha hai
         createdAt: serverTimestamp(),
       });
       setForm(initialForm);
@@ -79,18 +80,20 @@ export default function FeedbackSection() {
   return (
     <section id="feedback" className="section feedback">
       <div className="container">
+        {/* 🟢 FIXED: Desc text badal kar instant show hone ka message de diya */}
         <SectionTitle
           label="Customer Reviews"
           title="What Our Customers Say"
-          desc="Share your experience with us. Approved reviews appear below for everyone to see."
+          desc="Share your experience with us. Your reviews appear below instantly for everyone to see."
           centered
         />
 
         <div className="feedback__form-wrap">
           <h3 className="feedback__form-title">Leave a Feedback</h3>
           {submitted ? (
+            /* 🟢 FIXED: Approval text yahan se khatam kar diya */
             <div className="form-success">
-              Thank you! Your feedback has been submitted and will appear once approved.
+              Thank you! Your feedback has been successfully submitted and added below.
             </div>
           ) : (
             <form className="feedback__form" onSubmit={handleSubmit}>
@@ -158,12 +161,13 @@ export default function FeedbackSection() {
         </div>
 
         <div className="feedback__list">
-          <h3 className="feedback__list-title">Approved Reviews</h3>
+          {/* 🟢 FIXED: Title se 'Approved' lafz hata kar direct kar diya */}
+          <h3 className="feedback__list-title">Customer Reviews</h3>
           {loading ? (
             <p className="feedback__status">Loading reviews...</p>
           ) : reviews.length === 0 ? (
             <p className="feedback__status">
-              No approved reviews yet. Be the first to share your experience!
+              No reviews yet. Be the first to share your experience!
             </p>
           ) : (
             <div className="feedback-grid">

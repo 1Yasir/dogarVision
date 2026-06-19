@@ -108,7 +108,7 @@ export const translations = {
         ghee: {
           name: "Pure Desi Ghee",
           desc: "Traditional homemade desi ghee prepared using the bilona method from pure buffalo milk. Rich aroma, golden color, and authentic taste.",
-          badge: "Coming Soon",
+          badge: "New Launch",
           imageLabel: "Desi Ghee",
         },
       },

@@ -1,6 +1,23 @@
+import { Link, useLocation } from "react-router-dom"; // 🟢 FIXED: Link aur useLocation import kiya
 import { contactInfo, footerLinks } from "../../data/siteData";
 
 export default function Footer() {
+  const location = useLocation();
+
+  // Smooth scroll handle for footer links
+  const handleFooterLinkClick = (e, href) => {
+    const sectionId = href.replace("/#", "");
+    
+    if (location.pathname === "/") {
+      e.preventDefault(); // Browser refresh rokay ga
+      window.history.pushState(null, null, href); // URL update kare ga bina refresh ke
+      const el = document.getElementById(sectionId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  };
+
   return (
     <footer className="footer">
       <div className="container">
@@ -19,7 +36,14 @@ export default function Footer() {
             <ul className="footer__links">
               {footerLinks.map(({ label, href }) => (
                 <li key={label}>
-                  <a href={href} className="footer__link">{label}</a>
+                  {/* 🟢 FIXED: <a> tag ko <Link> se badal diya aur smooth scroll lagaya */}
+                  <Link 
+                    to={href} 
+                    className="footer__link"
+                    onClick={(e) => handleFooterLinkClick(e, href)}
+                  >
+                    {label}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -29,13 +53,14 @@ export default function Footer() {
             <h4 className="footer__heading">Contact Us</h4>
             <div className="footer__contact-item">
               <span>📞</span>
-              <a href="tel:+923044169153" className="footer__contact-link">
+              <a href={`tel:${contactInfo.phone}`} className="footer__contact-link">
                 {contactInfo.phone}
               </a>
             </div>
             <div className="footer__contact-item">
               <span>💬</span>
-              <a href="tel:+923044169153" className="footer__contact-link">
+              {/* 🟢 TIP: WhatsApp link ko tel: ki jagah href par direct call ya chat par lagaya ja sakta hai */}
+              <a href={`https://wa.me/${contactInfo.whatsapp.replace('+', '')}`} target="_blank" rel="noreferrer" className="footer__contact-link">
                 WhatsApp: {contactInfo.whatsapp}
               </a>
             </div>

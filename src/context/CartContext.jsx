@@ -1,10 +1,20 @@
-import { createContext, useContext, useState, useMemo, useCallback } from "react";
+import { createContext, useContext, useState, useMemo, useCallback, useEffect } from "react";
 
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState([]);
+  // 📝 CHANGE 1: Cart items initialize karte waqt pehle localStorage check karein ge
+  const [items, setItems] = useState(() => {
+    const savedCart = localStorage.getItem("dv_cart_items");
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
+  
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // 📝 CHANGE 2: Jab bhi items array mein koi tabdeeli ho, usay automatically localStorage mein save karein
+  useEffect(() => {
+    localStorage.setItem("dv_cart_items", JSON.stringify(items));
+  }, [items]);
 
   const addToCart = useCallback((product, quantity = 1) => {
     setItems((prev) => {
@@ -52,6 +62,7 @@ export function CartProvider({ children }) {
 
   const clearCart = useCallback(() => {
     setItems([]);
+    localStorage.removeItem("dv_cart_items"); // 📝 CHANGE 3: Cart clear hone par storage bhi saaf ho jaye
   }, []);
 
   const toggleCart = useCallback(() => {

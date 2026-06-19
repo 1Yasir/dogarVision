@@ -29,33 +29,41 @@ export default function NavBar() {
     };
   }, [menuOpen]);
 
+  // Handle scrolling when hash changes or on home page navigation
   useEffect(() => {
-    if (location.pathname !== "/") return;
-
     const hash = location.hash.replace("#", "");
-    if (hash && SECTION_IDS.includes(hash)) {
-      setActiveSection(hash);
+    
+    if (location.pathname === "/") {
+      if (hash && SECTION_IDS.includes(hash)) {
+        setActiveSection(hash);
+        const el = document.getElementById(hash);
+        if (el) {
+          setTimeout(() => el.scrollIntoView({ behavior: "smooth" }), 100);
+        }
+      } else if (!hash) {
+        setActiveSection("home");
+      }
+
+      const observers = [];
+      SECTION_IDS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        const observer = new IntersectionObserver(
+          ([entry]) => {
+            if (entry.isIntersecting) {
+              setActiveSection(id);
+            }
+          },
+          { rootMargin: "-30% 0px -55% 0px", threshold: 0 }
+        );
+
+        observer.observe(el);
+        observers.push(observer);
+      });
+
+      return () => observers.forEach((observer) => observer.disconnect());
     }
-
-    const observers = [];
-    SECTION_IDS.forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            setActiveSection(id);
-          }
-        },
-        { rootMargin: "-30% 0px -55% 0px", threshold: 0 }
-      );
-
-      observer.observe(el);
-      observers.push(observer);
-    });
-
-    return () => observers.forEach((observer) => observer.disconnect());
   }, [location.pathname, location.hash]);
 
   const isLinkActive = (href, isCart) => {
@@ -65,6 +73,22 @@ export default function NavBar() {
     }
     const sectionId = href.replace("/#", "");
     return location.pathname === "/" && activeSection === sectionId;
+  };
+
+  // Smooth scroll handle for section links
+  const handleSectionClick = (e, href) => {
+    setMenuOpen(false);
+    const sectionId = href.replace("/#", "");
+    
+    if (location.pathname === "/") {
+      e.preventDefault(); // Browser refresh rokay ga
+      window.history.pushState(null, null, href); // URL update kare ga bina refresh ke
+      const el = document.getElementById(sectionId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+      setActiveSection(sectionId);
+    }
   };
 
   return (
@@ -92,14 +116,15 @@ export default function NavBar() {
                 )}
               </Link>
             ) : (
-              <a
+              /* 🟢 FIXED: <a> tag ko <Link> se badal diya aur handleSectionClick attach kar diya */
+              <Link
                 key={key}
-                href={href}
+                to={href}
                 className={`nav__link${isLinkActive(href, false) ? " nav__link--active" : ""}`}
-                onClick={() => setMenuOpen(false)}
+                onClick={(e) => handleSectionClick(e, href)}
               >
                 {t(`nav.${key}`)}
-              </a>
+              </Link>
             )
           )}
         </div>
