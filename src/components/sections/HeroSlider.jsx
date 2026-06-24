@@ -1,22 +1,44 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { products } from "../../data/siteData"; 
 import { heroSlideGroups } from "../../data/heroSlides";
 import { useCart } from "../../context/CartContext";
 import { useLanguage } from "../../context/LanguageContext";
 import Button from "../common/Button";
 
+// 🔴 Firebase imports jo pehle nahi thay
+import { db } from "../../firebase";
+import { collection, onSnapshot } from "firebase/firestore";
+
 const INTERVAL_MS = 3000;
 
 export default function HeroSlider() {
+  const [dbProducts, setDbProducts] = useState([]); // Database products state
   const { addToCart } = useCart();
   const { t, lang } = useLanguage(); 
 
   const isRTL = lang === "ur";
 
+  // 🔴 1. Firebase se live products fetch karne ka effect
+  useEffect(() => {
+    const productsRef = collection(db, "products");
+    const unsubscribe = onSnapshot(productsRef, (snapshot) => {
+      const fetched = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
+      setDbProducts(fetched);
+    }, (error) => {
+      console.error("Slider mein products lane mein error: ", error);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 🔴 2. Ab useMemo hamari dbProducts state par depend karega (products import par nahi)
   const slides = useMemo(() => {
     return heroSlideGroups
       .map((group) => {
-        const availableProduct = products.find(
+        // Hum 'dbProducts' ke andar se active product dhoond rahe hain
+        const availableProduct = dbProducts.find(
           (p) => group.categories.includes(p.category) && p.available && p.stockCount > 0
         );
 
@@ -51,7 +73,7 @@ export default function HeroSlider() {
         };
       })
       .filter((slide) => slide !== null); 
-  }, [t]);
+  }, [t, dbProducts]); // 🔴 Dependency array mein dbProducts add kar diya
 
   const slideCount = slides.length;
   const extendedSlides = slideCount > 1 ? [...slides, slides[0]] : slides;
@@ -178,7 +200,6 @@ export default function HeroSlider() {
           onTransitionEnd={handleTransitionEnd}
         >
           {extendedSlides.map((slide, index) => {
-            // 🟢 AUTOMATIC DISCOUNT CHECK: Slide ke linked product se direct data check ho raha hai
             const productDiscount = slide.product?.discountPercentage ?? 0;
             const hasDiscount = productDiscount > 0;
 
@@ -199,7 +220,6 @@ export default function HeroSlider() {
                     </h1>
                     <p className="hero-slider__subtitle">{slide.subtitle}</p>
                     
-                    {/* Actions container built with flex layout to handle elements in one row */}
                     <div className="hero-slider__actions" style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "10px", flexWrap: "wrap" }}>
                       <Button
                         type="button"
@@ -208,14 +228,11 @@ export default function HeroSlider() {
                       >
                         {t("hero.orderNow") || "Order Now"}
                       </Button>
-
                     </div>
                   </div>
                   <div className="hero-slider__visual" aria-hidden="true">
                     {hasDiscount && (
-                        <span 
-                          className="hero-slider__discount-tag" 
-                         >
+                        <span className="hero-slider__discount-tag">
                           🔥 {productDiscount}% OFF
                         </span>
                       )}

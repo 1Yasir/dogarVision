@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { contactInfo, products } from "../../data/siteData";
+import { addDoc, collection, serverTimestamp, doc, updateDoc, increment, getDoc } from "firebase/firestore";
+import { contactInfo } from "../../data/siteData"; 
 import { useCart } from "../../context/CartContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { db } from "../../firebase";
@@ -24,20 +24,17 @@ const initialCheckout = {
 };
 
 function CartItemRow({ item, onUpdate, onRemove, t }) {
-  const product = products.find((p) => p.id === item.productId);
-  const stockCount = product?.stockCount || 999;
+  const lineTotal = item.unitPrice * item.quantity;
+  const maxStock = item.stockCount || 1;
 
-  const hasDiscount = product && product.discountPercentage > 0;
-  const finalUnitPrice = hasDiscount 
-    ? item.unitPrice * (1 - product.discountPercentage / 100) 
-    : item.unitPrice;
-
-  const lineTotal = finalUnitPrice * item.quantity;
-
+  // ✅ Input change handler - direct quantity set karta hai
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value) || 1;
-    const newQuantity = Math.max(1, Math.min(value, stockCount));
-    onUpdate(item.productId, newQuantity - item.quantity);
+    const newQuantity = Math.max(1, Math.min(value, maxStock));
+    
+    // Difference calculate karke updateQuantity ko pass karo
+    const diff = newQuantity - item.quantity;
+    onUpdate(item.productId, diff);
   };
 
   return (
@@ -46,13 +43,13 @@ function CartItemRow({ item, onUpdate, onRemove, t }) {
       <div className="cart-item__info">
         <h4 className="cart-item__name">{item.name}</h4>
         <p className="cart-item__unit-price">
-          {hasDiscount ? (
+          {item.originalPrice && item.originalPrice > item.unitPrice ? (
             <>
               <span style={{ textDecoration: "line-through", color: "#888", marginRight: "8px" }}>
-                {formatPrice(item.unitPrice)}
+                {formatPrice(item.originalPrice)}
               </span>
               <span style={{ color: "#2e7d32", fontWeight: "bold" }}>
-                {formatPrice(finalUnitPrice)}
+                {formatPrice(item.unitPrice)}
               </span>
             </>
           ) : (
@@ -61,27 +58,34 @@ function CartItemRow({ item, onUpdate, onRemove, t }) {
         </p>
         <div className="cart-item__qty-row">
           <div className="cart-item__qty-controls">
+            {/* Minus button */}
             <button
               type="button"
               className="cart-item__qty-btn"
               onClick={() => onUpdate(item.productId, -1)}
+              disabled={item.quantity <= 1}
               aria-label={`${t("cart.decrease")} ${item.name}`}
             >
               −
             </button>
+            
+            {/* Quantity Input with proper min/max */}
             <input
               type="number"
               className="cart-item__qty-input"
               value={item.quantity}
               onChange={handleQuantityChange}
               min="1"
-              max={stockCount}
+              max={maxStock}
               aria-label={`${t("cart.quantity")} ${item.name}`}
             />
+            
+            {/* Plus button */}
             <button
               type="button"
               className="cart-item__qty-btn"
               onClick={() => onUpdate(item.productId, 1)}
+              disabled={item.quantity >= maxStock}
               aria-label={`${t("cart.increase")} ${item.name}`}
             >
               +
@@ -90,6 +94,8 @@ function CartItemRow({ item, onUpdate, onRemove, t }) {
           <span className="cart-item__line-total">{formatPrice(lineTotal)}</span>
         </div>
       </div>
+      
+      {/* Remove button */}
       <button
         type="button"
         className="cart-item__remove"
@@ -109,20 +115,13 @@ export default function CartDrawer() {
     removeFromCart, 
     clearCart,
     isCartOpen,
-    closeCart 
+    closeCart,
+    totalBill 
   } = useCart();
   const { t } = useLanguage();
   const [checkout, setCheckout] = useState(initialCheckout);
   const [submitting, setSubmitting] = useState(false);
-
-  const finalTotalBill = items.reduce((total, item) => {
-    const product = products.find((p) => p.id === item.productId);
-    const hasDiscount = product && product.discountPercentage > 0;
-    const finalUnitPrice = hasDiscount 
-      ? item.unitPrice * (1 - product.discountPercentage / 100) 
-      : item.unitPrice;
-    return total + (finalUnitPrice * item.quantity);
-  }, 0);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (isCartOpen) {
@@ -141,6 +140,7 @@ export default function CartDrawer() {
       ...checkout,
       [name]: name === "phone" ? sanitizePhoneInput(value) : value,
     });
+    setErrorMessage("");
   };
 
   const phoneInvalid =
@@ -156,51 +156,73 @@ export default function CartDrawer() {
     if (items.length === 0 || !canPlaceOrder) return;
 
     setSubmitting(true);
+    setErrorMessage("");
 
     try {
-      const processedItems = items.map((item) => {
-        const product = products.find((p) => p.id === item.productId);
-        const hasDiscount = product && product.discountPercentage > 0;
-        const finalUnitPrice = hasDiscount 
-          ? item.unitPrice * (1 - product.discountPercentage / 100) 
-          : item.unitPrice;
+      // ✅ STEP 1: Real-time stock validation - sab items check karo
+      for (const item of items) {
+        const productRef = doc(db, "products", item.productId);
+        const freshSnap = await getDoc(productRef);
+        
+        if (freshSnap.exists()) {
+          const currentStock = Number(freshSnap.data().stockCount) || 0;
+          
+          // Agar stock kam hai to order cancel karo
+          if (currentStock < item.quantity) {
+            setErrorMessage(
+              `❌ ${item.name} ka stock khatam ho gaya! Available: ${currentStock} items. Order update karein.`
+            );
+            setSubmitting(false);
+            return;
+          }
+        }
+      }
 
-        return {
-          productName: item.name,
-          quantity: formatQuantity(item),
-          subtotal: finalUnitPrice * item.quantity,
-        };
-      });
+      const processedItems = items.map((item) => ({
+        productName: item.name,
+        quantity: formatQuantity(item),
+        subtotal: item.unitPrice * item.quantity,
+      }));
 
+      // ✅ STEP 2: Order ko database mein save karo
       await addDoc(collection(db, "orders"), {
         name: checkout.fullName.trim(),
         phone: checkout.phone.trim(),
         address: checkout.address.trim(),
         items: processedItems,
-        totalBill: finalTotalBill,
+        totalBill: totalBill, 
         createdAt: serverTimestamp(),
       });
 
-      const message = buildWhatsAppMessage(items, finalTotalBill, checkout);
+      // ✅ STEP 3: Stock ko minus karo - ek ek kar ke safely
+      const stockUpdates = items.map((item) => {
+        const productRef = doc(db, "products", item.productId);
+        const orderQty = Number(item.quantity) || 1;
+        
+        return updateDoc(productRef, {
+          stockCount: increment(-orderQty)
+        });
+      });
+      
+      await Promise.all(stockUpdates);
+
+      // ✅ STEP 4: WhatsApp message bheejo
+      const message = buildWhatsAppMessage(items, totalBill, checkout);
       const number = contactInfo.whatsapp.replace(/\D/g, "");
       const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
       
-      // 📝 CHANGE 1: Pehle WhatsApp tab open hoga taake browser popup block na kare
       window.open(url, "_blank", "noopener,noreferrer");
 
-      // 📝 CHANGE 2: User ko success message alert show kiya
-      alert("Shukriya! Aap ka order kamyabi se save ho gaya hai.");
+      // ✅ STEP 5: Cart clear karo
+      alert("✅ Shukriya! Aap ka order kamyabi se save ho gaya hai.");
 
-      // 📝 CHANGE 3: Inputs empty kiye aur cart clear kiya
       setCheckout(initialCheckout);
       clearCart();
-      closeCart(); // Drawer ko bhi auto-close kar dete hain order ke baad
+      closeCart();
 
     } catch (error) {
       console.error("Order error:", error);
-      alert(
-        "Failed to save your order. Please try again or contact us on WhatsApp directly."
-      );
+      setErrorMessage("❌ Order save nahi ho saka. Dubara koshish karein.");
     } finally {
       setSubmitting(false);
     }
@@ -208,21 +230,13 @@ export default function CartDrawer() {
 
   if (!isCartOpen) return null;
 
-  const itemLabel =
-    items.length === 1 ? t("cart.item") : t("cart.items");
+  const itemLabel = items.length === 1 ? t("cart.item") : t("cart.items");
 
   return (
     <div className="cart-drawer">
         <div className="cart-drawer__header">
           <h2 className="cart-drawer__title">{t("cart.title")}</h2>
-          <button
-            type="button"
-            className="cart-drawer__close"
-            onClick={closeCart}
-            aria-label="Close cart"
-          >
-            ✕
-          </button>
+          <button type="button" className="cart-drawer__close" onClick={closeCart}>✕</button>
         </div>
 
         <div className="cart-drawer__content">
@@ -231,11 +245,7 @@ export default function CartDrawer() {
               <span className="cart-empty__icon">🛒</span>
               <p className="cart-empty__title">{t("cart.emptyTitle")}</p>
               <p className="cart-empty__desc">{t("cart.emptyDesc")}</p>
-              <Link 
-                to={{ pathname: "/", hash: "#products" }} 
-                className="btn btn--primary btn--sm"
-                onClick={closeCart}
-              >
+              <Link to={{ pathname: "/", hash: "#products" }} className="btn btn--primary btn--sm" onClick={closeCart}>
                 {t("cart.shopProducts")}
               </Link>
             </div>
@@ -243,23 +253,14 @@ export default function CartDrawer() {
             <>
               <div className="cart-items">
                 {items.map((item) => (
-                  <CartItemRow
-                    key={item.productId}
-                    item={item}
-                    onUpdate={updateQuantity}
-                    onRemove={removeFromCart}
-                    t={t}
-                  />
+                  <CartItemRow key={item.productId} item={item} onUpdate={updateQuantity} onRemove={removeFromCart} t={t} />
                 ))}
               </div>
               
-
               <div className="cart-bill">
                 <div className="cart-bill__row">
-                  <span>
-                    {t("cart.subtotal")} ({items.length} {itemLabel})
-                  </span>
-                  <span>{formatPrice(finalTotalBill)}</span>
+                  <span>{t("cart.subtotal")} ({items.length} {itemLabel})</span>
+                  <span>{formatPrice(totalBill)}</span>
                 </div>
                 <div className="cart-bill__row cart-bill__row--delivery">
                   <span>{t("cart.delivery")}</span>
@@ -267,76 +268,72 @@ export default function CartDrawer() {
                 </div>
                 <div className="cart-bill__total">
                   <span>{t("cart.totalBill")}</span>
-                  <span className="cart-bill__total-amount">{formatPrice(finalTotalBill)}</span>
+                  <span className="cart-bill__total-amount">{formatPrice(totalBill)}</span>
                 </div>
               </div>
 
               <form className="cart-checkout" onSubmit={handlePlaceOrder}>
                 <h3 className="cart-checkout__title">{t("cart.checkoutTitle")}</h3>
 
+                {errorMessage && (
+                  <div className="form-error" style={{ marginBottom: "16px", padding: "12px", backgroundColor: "#ffebee", borderRadius: "4px", color: "#c62828" }}>
+                    {errorMessage}
+                  </div>
+                )}
+
                 <div className="form-group">
-                  <label className="form-label" htmlFor="drawer-cart-name">
-                    {t("cart.fullName")}
-                  </label>
-                  <input
-                    className="form-input"
-                    id="drawer-cart-name"
-                    name="fullName"
-                    type="text"
-                    required
+                  <label className="form-label" htmlFor="drawer-cart-name">{t("cart.fullName")}</label>
+                  <input 
+                    className="form-input" 
+                    id="drawer-cart-name" 
+                    name="fullName" 
+                    type="text" 
+                    required 
                     placeholder={t("cart.fullNamePlaceholder")}
-                    value={checkout.fullName}
-                    onChange={handleChange}
-                    disabled={submitting}
+                    value={checkout.fullName} 
+                    onChange={handleChange} 
+                    disabled={submitting} 
                   />
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label" htmlFor="drawer-cart-phone">
-                    {t("cart.phone")}
-                  </label>
-                  <input
-                    className={`form-input${phoneInvalid ? " form-input--error" : ""}`}
-                    id="drawer-cart-phone"
-                    name="phone"
-                    type="tel"
-                    required
+                  <label className="form-label" htmlFor="drawer-cart-phone">{t("cart.phone")}</label>
+                  <input 
+                    className={`form-input${phoneInvalid ? " form-input--error" : ""}`} 
+                    id="drawer-cart-phone" 
+                    name="phone" 
+                    type="tel" 
+                    required 
                     placeholder={t("cart.phonePlaceholder")}
-                    value={checkout.phone}
-                    onChange={handleChange}
+                    value={checkout.phone} 
+                    onChange={handleChange} 
                     disabled={submitting}
                     inputMode="tel"
                     autoComplete="tel"
                   />
-                  {phoneInvalid && (
-                    <p className="form-error" role="alert">
-                      {PAKISTANI_PHONE_ERROR}
-                    </p>
-                  )}
+                  {phoneInvalid && <p className="form-error">{PAKISTANI_PHONE_ERROR}</p>}
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label" htmlFor="drawer-cart-address">
-                    {t("cart.address")}
-                  </label>
-                  <textarea
-                    className="form-textarea"
-                    id="drawer-cart-address"
-                    name="address"
-                    required
-                    rows={3}
+                  <label className="form-label" htmlFor="drawer-cart-address">{t("cart.address")}</label>
+                  <textarea 
+                    className="form-textarea" 
+                    id="drawer-cart-address" 
+                    name="address" 
+                    required 
+                    rows={3} 
                     placeholder={t("cart.addressPlaceholder")}
-                    value={checkout.address}
-                    onChange={handleChange}
-                    disabled={submitting}
+                    value={checkout.address} 
+                    onChange={handleChange} 
+                    disabled={submitting} 
                   />
                 </div>
 
                 <div className="cart-checkout__actions">
-                  <Button
-                    type="submit"
-                    variant="accent"
-                    className="cart-checkout__submit"
+                  <Button 
+                    type="submit" 
+                    variant="accent" 
+                    className="cart-checkout__submit" 
                     disabled={!canPlaceOrder}
                   >
                     {submitting ? (
@@ -353,10 +350,10 @@ export default function CartDrawer() {
                       </>
                     )}
                   </Button>
-                  <button
-                    type="button"
-                    className="cart-checkout__clear"
-                    onClick={clearCart}
+                  <button 
+                    type="button" 
+                    className="cart-checkout__clear" 
+                    onClick={clearCart} 
                     disabled={submitting}
                   >
                     {t("cart.clearCart")}
@@ -367,5 +364,5 @@ export default function CartDrawer() {
           )}
         </div>
       </div>
-    );
+  );
 }

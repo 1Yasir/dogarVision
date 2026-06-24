@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { contactInfo, products } from "../../data/siteData";
+import { addDoc, collection, serverTimestamp, doc, updateDoc, increment, getDoc } from "firebase/firestore";
+import { contactInfo } from "../../data/siteData"; 
 import { useCart } from "../../context/CartContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { db } from "../../firebase";
@@ -24,13 +24,18 @@ const initialCheckout = {
 };
 
 function CartItemRow({ item, onUpdate, onRemove, t }) {
-  const product = products.find((p) => p.id === item.productId);
-  const hasDiscount = product && product.discountPercentage > 0;
-  const finalUnitPrice = hasDiscount 
-    ? item.unitPrice * (1 - product.discountPercentage / 100) 
-    : item.unitPrice;
+  const lineTotal = item.unitPrice * item.quantity;
+  const maxStock = item.stockCount || 1;
 
-  const lineTotal = finalUnitPrice * item.quantity;
+  // ✅ Input change handler - direct quantity set karta hai
+  const handleQuantityChange = (e) => {
+    const value = parseInt(e.target.value) || 1;
+    const newQuantity = Math.max(1, Math.min(value, maxStock));
+    
+    // Difference calculate karke updateQuantity ko pass karo
+    const diff = newQuantity - item.quantity;
+    onUpdate(item.productId, diff);
+  };
 
   return (
     <div className="cart-item">
@@ -38,36 +43,38 @@ function CartItemRow({ item, onUpdate, onRemove, t }) {
       <div className="cart-item__info">
         <h4 className="cart-item__name">{item.name}</h4>
         <p className="cart-item__unit-price">
-          {hasDiscount ? (
-            <>
-              <span style={{ textDecoration: "line-through", color: "#888", marginRight: "8px" }}>
-                {formatPrice(item.unitPrice)}
-              </span>
-              <span style={{ color: "#2e7d32", fontWeight: "bold" }}>
-                {formatPrice(finalUnitPrice)}
-              </span>
-            </>
-          ) : (
-            formatPrice(item.unitPrice)
-          )} / {item.unit}
+          {formatPrice(item.unitPrice)} / {item.unit}
         </p>
         <div className="cart-item__qty-row">
           <div className="cart-item__qty-controls">
+            {/* Minus button */}
             <button
               type="button"
               className="cart-item__qty-btn"
               onClick={() => onUpdate(item.productId, -1)}
+              disabled={item.quantity <= 1}
               aria-label={`${t("cart.decrease")} ${item.name}`}
             >
               −
             </button>
-            <span className="cart-item__qty-value">
-              {formatQuantity(item)}
-            </span>
+            
+            {/* Quantity Input with proper min/max */}
+            <input
+              type="number"
+              className="cart-item__qty-input"
+              value={item.quantity}
+              onChange={handleQuantityChange}
+              min="1"
+              max={maxStock}
+              aria-label={`${t("cart.quantity")} ${item.name}`}
+            />
+            
+            {/* Plus button */}
             <button
               type="button"
               className="cart-item__qty-btn"
               onClick={() => onUpdate(item.productId, 1)}
+              disabled={item.quantity >= maxStock}
               aria-label={`${t("cart.increase")} ${item.name}`}
             >
               +
@@ -75,7 +82,14 @@ function CartItemRow({ item, onUpdate, onRemove, t }) {
           </div>
           <span className="cart-item__line-total">{formatPrice(lineTotal)}</span>
         </div>
+        
+        {/* Stock display */}
+        <p className="cart-item__stock-info" style={{ fontSize: "0.85rem", color: "#666", marginTop: "4px" }}>
+          Available: {maxStock}
+        </p>
       </div>
+      
+      {/* Remove button */}
       <button
         type="button"
         className="cart-item__remove"
@@ -89,21 +103,11 @@ function CartItemRow({ item, onUpdate, onRemove, t }) {
 }
 
 export default function CartContent() {
-  // 📝 CHANGE 1: clearCart function ko useCart() se nikaal kar yahan active kiya taake order ke baad cart khaali ho sakay
-  const { items, updateQuantity, removeFromCart, clearCart } =
-    useCart();
+  const { items, updateQuantity, removeFromCart, clearCart, totalBill } = useCart(); 
   const { t } = useLanguage();
   const [checkout, setCheckout] = useState(initialCheckout);
   const [submitting, setSubmitting] = useState(false);
-
-  const finalTotalBill = items.reduce((total, item) => {
-    const product = products.find((p) => p.id === item.productId);
-    const hasDiscount = product && product.discountPercentage > 0;
-    const finalUnitPrice = hasDiscount 
-      ? item.unitPrice * (1 - product.discountPercentage / 100) 
-      : item.unitPrice;
-    return total + (finalUnitPrice * item.quantity);
-  }, 0);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -111,6 +115,7 @@ export default function CartContent() {
       ...checkout,
       [name]: name === "phone" ? sanitizePhoneInput(value) : value,
     });
+    setErrorMessage("");
   };
 
   const phoneInvalid =
@@ -126,52 +131,72 @@ export default function CartContent() {
     if (items.length === 0 || !canPlaceOrder) return;
 
     setSubmitting(true);
+    setErrorMessage("");
 
     try {
-      const processedItems = items.map((item) => {
-        const product = products.find((p) => p.id === item.productId);
-        const hasDiscount = product && product.discountPercentage > 0;
-        const finalUnitPrice = hasDiscount 
-          ? item.unitPrice * (1 - product.discountPercentage / 100) 
-          : item.unitPrice;
+      // ✅ STEP 1: Real-time stock validation - check karo database se
+      for (const item of items) {
+        const productRef = doc(db, "products", item.productId);
+        const freshSnap = await getDoc(productRef);
+        
+        if (freshSnap.exists()) {
+          const currentStock = Number(freshSnap.data().stockCount) || 0;
+          
+          // Agar stock kam hai to order cancel karo
+          if (currentStock < item.quantity) {
+            setErrorMessage(
+              `❌ ${item.name} ka stock khatam ho gaya! Available: ${currentStock} items. Order update karein.`
+            );
+            setSubmitting(false);
+            return;
+          }
+        }
+      }
 
-        return {
-          productName: item.name,
-          quantity: formatQuantity(item),
-          subtotal: finalUnitPrice * item.quantity,
-        };
-      });
+      const processedItems = items.map((item) => ({
+        productName: item.name,
+        quantity: formatQuantity(item),
+        subtotal: item.unitPrice * item.quantity,
+      }));
 
+      // ✅ STEP 2: Order ko database mein save karo
       await addDoc(collection(db, "orders"), {
         name: checkout.fullName.trim(),
         phone: checkout.phone.trim(),
         address: checkout.address.trim(),
         items: processedItems,
-        totalBill: finalTotalBill,
+        totalBill: totalBill, 
         createdAt: serverTimestamp(),
       });
 
-      // WhatsApp ka message aur URL pehle generate kar lete hain
-      const message = buildWhatsAppMessage(items, finalTotalBill, checkout);
+      // ✅ STEP 3: Stock ko minus karo - ek ek kar ke safely
+      const stockUpdates = items.map((item) => {
+        const productRef = doc(db, "products", item.productId);
+        const orderedQty = Number(item.quantity) || 1;
+        
+        return updateDoc(productRef, {
+          stockCount: increment(-orderedQty)
+        });
+      });
+      
+      await Promise.all(stockUpdates);
+
+      // ✅ STEP 4: WhatsApp message bheejo
+      const message = buildWhatsAppMessage(items, totalBill, checkout);
       const number = contactInfo.whatsapp.replace(/\D/g, "");
       const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 
-      // 📝 CHANGE 2: User ko success message/alert show kiya
-      alert("Shukriya! Aap ka order kamyabi se save ho gaya hai. Ab aap ko WhatsApp par redirect kiya ja raha hai.");
+      // ✅ STEP 5: Cart clear karo aur redirect karo
+      alert("✅ Shukriya! Aap ka order kamyabi se save ho gaya hai. WhatsApp par redirect ho rahe hain...");
 
-      // 📝 CHANGE 3: Order successfully save hone ke baad input fields ko empty (reset) kar diya
       setCheckout(initialCheckout);
-
-      // 📝 CHANGE 4: Cart mein se saari products ko ek dafa khatam (clear) kar diya
       clearCart();
 
-      // WhatsApp open kiya
       window.open(url, "_blank", "noopener,noreferrer");
+
     } catch (error) {
-      console.error("Order error:", error); // 📝 CHANGE 5: Agar koi issue aaye to console mein dikhega debug karne ke liye
-      alert(
-        "Failed to save your order. Please try again or contact us on WhatsApp directly."
-      );
+      console.error("Order error:", error);
+      setErrorMessage("❌ Order save nahi ho saka. Dubara koshish karein ya WhatsApp par contact karein.");
     } finally {
       setSubmitting(false);
     }
@@ -190,8 +215,7 @@ export default function CartContent() {
     );
   }
 
-  const itemLabel =
-    items.length === 1 ? t("cart.item") : t("cart.items");
+  const itemLabel = items.length === 1 ? t("cart.item") : t("cart.items");
 
   return (
     <div className="cart-content">
@@ -212,7 +236,7 @@ export default function CartContent() {
           <span>
             {t("cart.subtotal")} ({items.length} {itemLabel})
           </span>
-          <span>{formatPrice(finalTotalBill)}</span>
+          <span>{formatPrice(totalBill)}</span>
         </div>
         <div className="cart-bill__row cart-bill__row--delivery">
           <span>{t("cart.delivery")}</span>
@@ -220,12 +244,18 @@ export default function CartContent() {
         </div>
         <div className="cart-bill__total">
           <span>{t("cart.totalBill")}</span>
-          <span className="cart-bill__total-amount">{formatPrice(finalTotalBill)}</span>
+          <span className="cart-bill__total-amount">{formatPrice(totalBill)}</span>
         </div>
       </div>
 
       <form className="cart-checkout" onSubmit={handlePlaceOrder}>
         <h3 className="cart-checkout__title">{t("cart.checkoutTitle")}</h3>
+
+        {errorMessage && (
+          <div className="form-error" style={{ marginBottom: "16px", padding: "12px", backgroundColor: "#ffebee", borderRadius: "4px", color: "#c62828" }}>
+            {errorMessage}
+          </div>
+        )}
 
         <div className="form-group">
           <label className="form-label" htmlFor="cart-name">

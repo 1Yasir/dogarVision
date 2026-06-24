@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useMemo, useCallback, useEffect } 
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
-  // 📝 CHANGE 1: Cart items initialize karte waqt pehle localStorage check karein ge
+  // 📝 localStorage check ke sath initialize
   const [items, setItems] = useState(() => {
     const savedCart = localStorage.getItem("dv_cart_items");
     return savedCart ? JSON.parse(savedCart) : [];
@@ -11,7 +11,7 @@ export function CartProvider({ children }) {
   
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // 📝 CHANGE 2: Jab bhi items array mein koi tabdeeli ho, usay automatically localStorage mein save karein
+  // Automatically sync with localStorage
   useEffect(() => {
     localStorage.setItem("dv_cart_items", JSON.stringify(items));
   }, [items]);
@@ -19,6 +19,13 @@ export function CartProvider({ children }) {
   const addToCart = useCallback((product, quantity = 1) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.productId === product.id);
+      
+      // 🟢 DYNAMIC PRICE CHECK: Agar discount chal raha hai to dynamic price nikalenge
+      const discount = product.discountPercentage ?? 0;
+      const finalPrice = discount > 0 
+        ? product.unitPrice - (product.unitPrice * discount / 100) 
+        : product.unitPrice;
+
       if (existing) {
         return prev.map((i) =>
           i.productId === product.id
@@ -26,13 +33,14 @@ export function CartProvider({ children }) {
             : i
         );
       }
+      
       return [
         ...prev,
         {
           productId: product.id,
           name: product.name,
           emoji: product.emoji,
-          unitPrice: product.unitPrice,
+          unitPrice: finalPrice, // 🟢 Ab yahan sahi discounted price jaye ga
           unit: product.unit,
           unitType: product.unitType,
           quantity,
@@ -62,7 +70,7 @@ export function CartProvider({ children }) {
 
   const clearCart = useCallback(() => {
     setItems([]);
-    localStorage.removeItem("dv_cart_items"); // 📝 CHANGE 3: Cart clear hone par storage bhi saaf ho jaye
+    localStorage.removeItem("dv_cart_items");
   }, []);
 
   const toggleCart = useCallback(() => {
