@@ -10,8 +10,7 @@ export function ThemeProvider({ children }) {
   });
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.setAttribute("data-bs-theme", theme);
+    document.documentElement.classList.toggle("dark", theme === "dark");
     localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
 

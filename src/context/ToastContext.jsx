@@ -1,13 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import Toast from "react-bootstrap/Toast";
-import ToastContainer from "react-bootstrap/ToastContainer";
 
 const ToastContext = createContext(null);
 
-/**
- * Global toast provider — used when quantity hits stock ceiling
- * so every cart surface shows the same Bootstrap feedback.
- */
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
@@ -28,22 +22,25 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
+      <div className="toast-stack" aria-live="polite">
         {toasts.map(({ id, message, variant }) => (
-          <Toast
+          <div
             key={id}
-            show
-            onClose={() => dismissToast(id)}
-            bg={variant}
-            autohide
-            delay={3500}
+            className={`toast-item toast-item--${variant}`}
+            role="status"
           >
-            <Toast.Body className={variant === "warning" ? "text-dark" : ""}>
-              {message}
-            </Toast.Body>
-          </Toast>
+            <span className="toast-item__message">{message}</span>
+            <button
+              type="button"
+              className="toast-item__close"
+              onClick={() => dismissToast(id)}
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
         ))}
-      </ToastContainer>
+      </div>
     </ToastContext.Provider>
   );
 }

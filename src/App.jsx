@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+﻿import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "./context/CartContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ToastProvider } from "./context/ToastContext";
@@ -7,6 +7,7 @@ import CartPage from "./pages/CartPage";
 import ProductDetail from "./pages/ProductDetail";
 import CartDrawer from "./components/cart/CartDrawer";
 import AdminDashboard from "./pages/AdminDashboard";
+import "./styles/poultry.css";
 
 export default function App() {
   return (

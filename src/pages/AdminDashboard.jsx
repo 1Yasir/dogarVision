@@ -9,21 +9,7 @@ import {
   query,
   updateDoc,
 } from "firebase/firestore";
-import {
-  Accordion,
-  Alert,
-  Badge,
-  Button,
-  Card,
-  Col,
-  Container,
-  Form,
-  Modal,
-  Row,
-  Tab,
-  Table,
-  Tabs,
-} from "react-bootstrap";
+import Button from "../components/common/Button";
 import SeoHelmet from "../components/common/SeoHelmet";
 import { seoCopy } from "../data/copy";
 import { db } from "../firebase";
@@ -38,7 +24,7 @@ const EMPTY_PRODUCT_FORM = {
   unit: "kg",
   unitType: "kg",
   stockCount: "",
-  emoji: "📦",
+  emoji: "\u{1F4E6}",
   desc: "",
   badge: "",
   category: "dairy",
@@ -73,7 +59,7 @@ function buildProductPayload(form) {
     unit,
     unitType: form.unitType.trim() || "kg",
     stockCount,
-    emoji: form.emoji.trim() || "📦",
+    emoji: form.emoji.trim() || "\u{1F4E6}",
     desc: form.desc.trim(),
     badge: form.badge.trim(),
     category: form.category.trim(),
@@ -98,7 +84,7 @@ function productToForm(prod) {
     unit: prod.unit || "kg",
     unitType: prod.unitType || "kg",
     stockCount: String(prod.stockCount ?? ""),
-    emoji: prod.emoji || "📦",
+    emoji: prod.emoji || "\u{1F4E6}",
     desc: prod.desc || "",
     badge: prod.badge || "",
     category: prod.category || "dairy",
@@ -112,11 +98,11 @@ function productToForm(prod) {
 }
 
 function formatTimestamp(ts) {
-  if (!ts) return "—";
+  if (!ts) return "-";
   if (typeof ts.toDate === "function") {
     return ts.toDate().toLocaleString();
   }
-  return "—";
+  return "-";
 }
 
 function ProductFormFields({ form, setForm, idPrefix = "" }) {
@@ -128,233 +114,266 @@ function ProductFormFields({ form, setForm, idPrefix = "" }) {
   };
 
   return (
-    <Row className="g-3">
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-name`}>
-          <Form.Label>Product Name *</Form.Label>
-          <Form.Control
-            required
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="e.g. Pure Desi Ghee"
-          />
-        </Form.Group>
-      </Col>
+    <div className="admin-form-grid">
+      <div className="form-group">
+        <label className="form-label" htmlFor={`${idPrefix}-name`}>
+          Product Name *
+        </label>
+        <input
+          id={`${idPrefix}-name`}
+          className="form-input"
+          required
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          placeholder="e.g. Pure Desi Ghee"
+        />
+      </div>
 
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-imageLabel`}>
-          <Form.Label>Image Label</Form.Label>
-          <Form.Control
-            value={form.imageLabel}
-            onChange={(e) =>
-              setForm({ ...form, imageLabel: e.target.value })
-            }
-            placeholder="e.g. DESI GHEE"
-          />
-        </Form.Group>
-      </Col>
+      <div className="form-group">
+        <label className="form-label" htmlFor={`${idPrefix}-imageLabel`}>
+          Image Label
+        </label>
+        <input
+          id={`${idPrefix}-imageLabel`}
+          className="form-input"
+          value={form.imageLabel}
+          onChange={(e) =>
+            setForm({ ...form, imageLabel: e.target.value })
+          }
+          placeholder="e.g. DESI GHEE"
+        />
+      </div>
 
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-emoji`}>
-          <Form.Label>Emoji Icon</Form.Label>
-          <Form.Control
-            value={form.emoji}
-            onChange={(e) => setForm({ ...form, emoji: e.target.value })}
-            placeholder="e.g. 🍯"
-          />
-        </Form.Group>
-      </Col>
+      <div className="form-group">
+        <label className="form-label" htmlFor={`${idPrefix}-emoji`}>
+          Emoji Icon
+        </label>
+        <input
+          id={`${idPrefix}-emoji`}
+          className="form-input"
+          value={form.emoji}
+          onChange={(e) => setForm({ ...form, emoji: e.target.value })}
+          placeholder="e.g. 🐄"
+        />
+      </div>
 
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-unitPrice`}>
-          <Form.Label>Unit Price (Rs.) *</Form.Label>
-          <Form.Control
-            required
-            type="number"
-            min={0}
-            step="any"
-            value={form.unitPrice}
-            onChange={(e) =>
-              setForm({ ...form, unitPrice: e.target.value })
-            }
-            onBlur={() => clampField("unitPrice")}
-          />
-          <Form.Text muted>
-            Clamped to 0 on blur — prices cannot be negative.
-          </Form.Text>
-        </Form.Group>
-      </Col>
+      <div className="form-group">
+        <label className="form-label" htmlFor={`${idPrefix}-unitPrice`}>
+          Unit Price (Rs.) *
+        </label>
+        <input
+          id={`${idPrefix}-unitPrice`}
+          className="form-input"
+          required
+          type="number"
+          min={0}
+          step="any"
+          value={form.unitPrice}
+          onChange={(e) =>
+            setForm({ ...form, unitPrice: e.target.value })
+          }
+          onBlur={() => clampField("unitPrice")}
+        />
+        <p className="admin-form-hint">
+          Clamped to 0 on blur — prices cannot be negative.
+        </p>
+      </div>
 
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-originalPrice`}>
-          <Form.Label>Original Price (Rs.)</Form.Label>
-          <Form.Control
-            type="number"
-            min={0}
-            step="any"
-            value={form.originalPrice}
-            onChange={(e) =>
-              setForm({ ...form, originalPrice: e.target.value })
-            }
-            onBlur={() => clampField("originalPrice")}
-          />
-        </Form.Group>
-      </Col>
+      <div className="form-group">
+        <label className="form-label" htmlFor={`${idPrefix}-originalPrice`}>
+          Original Price (Rs.)
+        </label>
+        <input
+          id={`${idPrefix}-originalPrice`}
+          className="form-input"
+          type="number"
+          min={0}
+          step="any"
+          value={form.originalPrice}
+          onChange={(e) =>
+            setForm({ ...form, originalPrice: e.target.value })
+          }
+          onBlur={() => clampField("originalPrice")}
+        />
+      </div>
 
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-discountPercentage`}>
-          <Form.Label>Discount %</Form.Label>
-          <Form.Control
-            type="number"
-            min={0}
-            step="any"
-            value={form.discountPercentage}
-            onChange={(e) =>
-              setForm({ ...form, discountPercentage: e.target.value })
-            }
-            onBlur={() => clampField("discountPercentage")}
-          />
-        </Form.Group>
-      </Col>
+      <div className="form-group">
+        <label
+          className="form-label"
+          htmlFor={`${idPrefix}-discountPercentage`}
+        >
+          Discount %
+        </label>
+        <input
+          id={`${idPrefix}-discountPercentage`}
+          className="form-input"
+          type="number"
+          min={0}
+          step="any"
+          value={form.discountPercentage}
+          onChange={(e) =>
+            setForm({ ...form, discountPercentage: e.target.value })
+          }
+          onBlur={() => clampField("discountPercentage")}
+        />
+      </div>
 
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-price`}>
-          <Form.Label>Price Display Text</Form.Label>
-          <Form.Control
-            value={form.price}
-            onChange={(e) => setForm({ ...form, price: e.target.value })}
-            placeholder="e.g. Rs. 3500 / kg"
-          />
-        </Form.Group>
-      </Col>
+      <div className="form-group">
+        <label className="form-label" htmlFor={`${idPrefix}-price`}>
+          Price Display Text
+        </label>
+        <input
+          id={`${idPrefix}-price`}
+          className="form-input"
+          value={form.price}
+          onChange={(e) => setForm({ ...form, price: e.target.value })}
+          placeholder="e.g. Rs. 3500 / kg"
+        />
+      </div>
 
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-unit`}>
-          <Form.Label>Unit</Form.Label>
-          <Form.Control
-            value={form.unit}
-            onChange={(e) => setForm({ ...form, unit: e.target.value })}
-            placeholder="kg"
-          />
-        </Form.Group>
-      </Col>
+      <div className="form-group">
+        <label className="form-label" htmlFor={`${idPrefix}-unit`}>
+          Unit
+        </label>
+        <input
+          id={`${idPrefix}-unit`}
+          className="form-input"
+          value={form.unit}
+          onChange={(e) => setForm({ ...form, unit: e.target.value })}
+          placeholder="kg"
+        />
+      </div>
 
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-unitType`}>
-          <Form.Label>Unit Type</Form.Label>
-          <Form.Control
-            value={form.unitType}
-            onChange={(e) =>
-              setForm({ ...form, unitType: e.target.value })
-            }
-            placeholder="kg"
-          />
-        </Form.Group>
-      </Col>
+      <div className="form-group">
+        <label className="form-label" htmlFor={`${idPrefix}-unitType`}>
+          Unit Type
+        </label>
+        <input
+          id={`${idPrefix}-unitType`}
+          className="form-input"
+          value={form.unitType}
+          onChange={(e) =>
+            setForm({ ...form, unitType: e.target.value })
+          }
+          placeholder="kg"
+        />
+      </div>
 
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-stockCount`}>
-          <Form.Label>Stock Count *</Form.Label>
-          <Form.Control
-            required
-            type="number"
-            min={0}
-            step="1"
-            value={form.stockCount}
-            onChange={(e) =>
-              setForm({ ...form, stockCount: e.target.value })
-            }
-            onBlur={() => clampField("stockCount")}
-          />
-          <Form.Text muted>
-            Stock is clamped with clampAdminNumeric — never stored below 0.
-          </Form.Text>
-        </Form.Group>
-      </Col>
+      <div className="form-group">
+        <label className="form-label" htmlFor={`${idPrefix}-stockCount`}>
+          Stock Count *
+        </label>
+        <input
+          id={`${idPrefix}-stockCount`}
+          className="form-input"
+          required
+          type="number"
+          min={0}
+          step="1"
+          value={form.stockCount}
+          onChange={(e) =>
+            setForm({ ...form, stockCount: e.target.value })
+          }
+          onBlur={() => clampField("stockCount")}
+        />
+        <p className="admin-form-hint">
+          Stock is clamped with clampAdminNumeric — never stored below 0.
+        </p>
+      </div>
 
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-badge`}>
-          <Form.Label>Badge</Form.Label>
-          <Form.Control
-            value={form.badge}
-            onChange={(e) => setForm({ ...form, badge: e.target.value })}
-            placeholder="e.g. New Launch"
-          />
-        </Form.Group>
-      </Col>
+      <div className="form-group">
+        <label className="form-label" htmlFor={`${idPrefix}-badge`}>
+          Badge
+        </label>
+        <input
+          id={`${idPrefix}-badge`}
+          className="form-input"
+          value={form.badge}
+          onChange={(e) => setForm({ ...form, badge: e.target.value })}
+          placeholder="e.g. New Launch"
+        />
+      </div>
 
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-category`}>
-          <Form.Label>Category</Form.Label>
-          <Form.Select
-            value={form.category}
-            onChange={(e) =>
-              setForm({ ...form, category: e.target.value })
-            }
-          >
-            <option value="dairy">Dairy</option>
-            <option value="poultry">Poultry</option>
-            <option value="organic">Organic</option>
-            <option value="eggs">Eggs</option>
-            <option value="chicken">Chicken</option>
-            <option value="chicks">Chicks</option>
-            <option value="achar">Achar</option>
-          </Form.Select>
-        </Form.Group>
-      </Col>
+      <div className="form-group">
+        <label className="form-label" htmlFor={`${idPrefix}-category`}>
+          Category
+        </label>
+        <select
+          id={`${idPrefix}-category`}
+          className="form-select"
+          value={form.category}
+          onChange={(e) =>
+            setForm({ ...form, category: e.target.value })
+          }
+        >
+          <option value="dairy">Dairy</option>
+          <option value="poultry">Poultry</option>
+          <option value="organic">Organic</option>
+          <option value="eggs">Eggs</option>
+          <option value="chicken">Chicken</option>
+          <option value="chicks">Chicks</option>
+          <option value="achar">Achar</option>
+        </select>
+      </div>
 
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-detailPath`}>
-          <Form.Label>Detail Path</Form.Label>
-          <Form.Control
-            value={form.detailPath}
-            onChange={(e) =>
-              setForm({ ...form, detailPath: e.target.value })
-            }
-            placeholder="/product/ghee"
-          />
-        </Form.Group>
-      </Col>
+      <div className="form-group">
+        <label className="form-label" htmlFor={`${idPrefix}-detailPath`}>
+          Detail Path
+        </label>
+        <input
+          id={`${idPrefix}-detailPath`}
+          className="form-input"
+          value={form.detailPath}
+          onChange={(e) =>
+            setForm({ ...form, detailPath: e.target.value })
+          }
+          placeholder="/product/ghee"
+        />
+      </div>
 
-      <Col md={6} lg={4}>
-        <Form.Group controlId={`${idPrefix}-kgOptions`}>
-          <Form.Label>kg Options (comma-separated)</Form.Label>
-          <Form.Control
-            value={form.kgOptions}
-            onChange={(e) =>
-              setForm({ ...form, kgOptions: e.target.value })
-            }
-            placeholder="0.5,1,2"
-          />
-        </Form.Group>
-      </Col>
+      <div className="form-group">
+        <label className="form-label" htmlFor={`${idPrefix}-kgOptions`}>
+          kg Options (comma-separated)
+        </label>
+        <input
+          id={`${idPrefix}-kgOptions`}
+          className="form-input"
+          value={form.kgOptions}
+          onChange={(e) =>
+            setForm({ ...form, kgOptions: e.target.value })
+          }
+          placeholder="0.5,1,2"
+        />
+      </div>
 
-      <Col md={6} lg={4} className="d-flex align-items-end">
-        <Form.Group controlId={`${idPrefix}-available`}>
-          <Form.Check
+      <div className="form-group admin-form-grid__checkbox">
+        <label className="admin-checkbox" htmlFor={`${idPrefix}-available`}>
+          <input
+            id={`${idPrefix}-available`}
             type="checkbox"
-            label="Available for purchase"
             checked={form.available}
             onChange={(e) =>
               setForm({ ...form, available: e.target.checked })
             }
           />
-        </Form.Group>
-      </Col>
+          Available for purchase
+        </label>
+      </div>
 
-      <Col xs={12}>
-        <Form.Group controlId={`${idPrefix}-desc`}>
-          <Form.Label>Description</Form.Label>
-          <Form.Control
-            as="textarea"
-            rows={2}
-            value={form.desc}
-            onChange={(e) => setForm({ ...form, desc: e.target.value })}
-            placeholder="Product description…"
-          />
-        </Form.Group>
-      </Col>
-    </Row>
+      <div className="form-group admin-form-grid__full">
+        <label className="form-label" htmlFor={`${idPrefix}-desc`}>
+          Description
+        </label>
+        <textarea
+          id={`${idPrefix}-desc`}
+          className="form-textarea"
+          rows={2}
+          value={form.desc}
+          onChange={(e) => setForm({ ...form, desc: e.target.value })}
+          placeholder="Product description…"
+        />
+      </div>
+    </div>
   );
 }
 
@@ -362,6 +381,7 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [feedbacks, setFeedbacks] = useState([]);
+  const [activeTab, setActiveTab] = useState("products");
 
   const [createForm, setCreateForm] = useState(EMPTY_PRODUCT_FORM);
   const [editForm, setEditForm] = useState(EMPTY_PRODUCT_FORM);
@@ -487,264 +507,312 @@ export default function AdminDashboard() {
     <>
       <SeoHelmet {...seoCopy.admin} />
 
-      <Container fluid="lg" className="py-4">
-        <h1 className="mb-4 border-bottom pb-2">Dogar Vision — Admin Dashboard</h1>
+      <div className="admin-dashboard">
+        <div className="container">
+          <h1 className="admin-dashboard__title">Dogar Vision - Admin Dashboard</h1>
 
-        <Tabs defaultActiveKey="products" className="mb-4">
-          <Tab eventKey="products" title="Products Management">
-            <Accordion className="mb-4">
-              <Accordion.Item eventKey="0">
-                <Accordion.Header>Add New Product</Accordion.Header>
-                <Accordion.Body>
-                  <Form onSubmit={handleCreateProduct}>
+          <div className="admin-tabs" role="tablist">
+            <Button
+              type="button"
+              variant={activeTab === "products" ? "primary" : "outline"}
+              onClick={() => setActiveTab("products")}
+            >
+              Products Management
+            </Button>
+            <Button
+              type="button"
+              variant={activeTab === "orders" ? "primary" : "outline"}
+              onClick={() => setActiveTab("orders")}
+            >
+              Customer Orders Log
+            </Button>
+            <Button
+              type="button"
+              variant={activeTab === "feedbacks" ? "primary" : "outline"}
+              onClick={() => setActiveTab("feedbacks")}
+            >
+              Review Approvals
+            </Button>
+          </div>
+
+          {activeTab === "products" && (
+            <div className="admin-panel">
+              <details className="admin-accordion">
+                <summary className="admin-accordion__summary">Add New Product</summary>
+                <div className="admin-accordion__body">
+                  <form onSubmit={handleCreateProduct}>
                     <ProductFormFields
                       form={createForm}
                       setForm={setCreateForm}
                       idPrefix="create"
                     />
-                    <div className="text-end mt-3">
-                      <Button type="submit" variant="success" disabled={saving}>
+                    <div className="admin-form-actions">
+                      <Button type="submit" variant="primary" disabled={saving}>
                         {saving ? "Saving…" : "Create Product"}
                       </Button>
                     </div>
-                  </Form>
-                </Accordion.Body>
-              </Accordion.Item>
-            </Accordion>
+                  </form>
+                </div>
+              </details>
 
-            <h2 className="h4 mb-3">All Products</h2>
-            <div className="table-responsive">
-              <Table striped bordered hover responsive className="align-middle">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Category</th>
-                    <th>Unit Price</th>
-                    <th>Stock</th>
-                    <th>Available</th>
-                    <th>Badge</th>
-                    <th>Discount</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.length === 0 ? (
+              <h2 className="admin-panel__heading">All Products</h2>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
                     <tr>
-                      <td colSpan={8} className="text-center text-muted">
-                        No products yet.
-                      </td>
+                      <th>Item</th>
+                      <th>Category</th>
+                      <th>Unit Price</th>
+                      <th>Stock</th>
+                      <th>Available</th>
+                      <th>Badge</th>
+                      <th>Discount</th>
+                      <th>Actions</th>
                     </tr>
-                  ) : (
-                    products.map((prod) => (
-                      <tr key={prod.id}>
-                        <td>
-                          <span className="me-1">{prod.emoji}</span>
-                          <strong>{prod.name}</strong>
-                          <div className="small text-muted">{prod.price}</div>
-                        </td>
-                        <td>{prod.category || "—"}</td>
-                        <td>Rs. {prod.unitPrice ?? "—"}</td>
-                        <td>
-                          <span
-                            className={
-                              (prod.stockCount ?? 0) <= 0
-                                ? "text-danger fw-bold"
-                                : "text-success fw-bold"
-                            }
-                          >
-                            {prod.stockCount ?? 0} {prod.unit || "kg"}
-                          </span>
-                        </td>
-                        <td>
-                          {prod.available !== false ? (
-                            <Badge bg="success">Yes</Badge>
-                          ) : (
-                            <Badge bg="secondary">No</Badge>
-                          )}
-                        </td>
-                        <td>{prod.badge || "—"}</td>
-                        <td>{prod.discountPercentage ?? 0}%</td>
-                        <td>
-                          <div className="d-flex gap-2 flex-wrap">
-                            <Button
-                              size="sm"
-                              variant="outline-primary"
-                              onClick={() => openEditModal(prod)}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline-danger"
-                              onClick={() => handleDeleteProduct(prod)}
-                            >
-                              Delete
-                            </Button>
-                          </div>
+                  </thead>
+                  <tbody>
+                    {products.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="admin-table__empty">
+                          No products yet.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </Table>
+                    ) : (
+                      products.map((prod) => (
+                        <tr key={prod.id}>
+                          <td>
+                            <span className="admin-table__emoji">{prod.emoji}</span>
+                            <strong>{prod.name}</strong>
+                            <div className="admin-table__muted">{prod.price}</div>
+                          </td>
+                          <td>{prod.category || "—"}</td>
+                          <td>Rs. {prod.unitPrice ?? "—"}</td>
+                          <td>
+                            <span
+                              className={
+                                (prod.stockCount ?? 0) <= 0
+                                  ? "admin-stock admin-stock--out"
+                                  : "admin-stock admin-stock--in"
+                              }
+                            >
+                              {prod.stockCount ?? 0} {prod.unit || "kg"}
+                            </span>
+                          </td>
+                          <td>
+                            {prod.available !== false ? (
+                              <span className="admin-badge admin-badge--success">Yes</span>
+                            ) : (
+                              <span className="admin-badge admin-badge--muted">No</span>
+                            )}
+                          </td>
+                          <td>{prod.badge || "—"}</td>
+                          <td>{prod.discountPercentage ?? 0}%</td>
+                          <td>
+                            <div className="admin-table__actions">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openEditModal(prod)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="btn--danger"
+                                onClick={() => handleDeleteProduct(prod)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </Tab>
+          )}
 
-          <Tab eventKey="orders" title="Customer Orders Log">
-            <Alert variant="info" className="d-flex flex-wrap gap-3 justify-content-between">
-              <span>
-                <strong>Total Orders:</strong> {orders.length}
-              </span>
-              <span>
-                <strong>Total Revenue:</strong> Rs. {totalRevenue.toLocaleString()}
-              </span>
-            </Alert>
+          {activeTab === "orders" && (
+            <div className="admin-panel">
+              <div className="admin-summary">
+                <span>
+                  <strong>Total Orders:</strong> {orders.length}
+                </span>
+                <span>
+                  <strong>Total Revenue:</strong> Rs.{" "}
+                  {totalRevenue.toLocaleString()}
+                </span>
+              </div>
 
-            <div className="table-responsive">
-              <Table striped bordered hover responsive className="align-middle">
-                <thead>
-                  <tr>
-                    <th>Customer</th>
-                    <th>Phone</th>
-                    <th>Address</th>
-                    <th>Date</th>
-                    <th>Items</th>
-                    <th>Total Bill</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.length === 0 ? (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
                     <tr>
-                      <td colSpan={6} className="text-center text-muted">
-                        No orders yet.
-                      </td>
+                      <th>Customer</th>
+                      <th>Phone</th>
+                      <th>Address</th>
+                      <th>Date</th>
+                      <th>Items</th>
+                      <th>Total Bill</th>
                     </tr>
-                  ) : (
-                    orders.map((order) => (
-                      <tr key={order.id}>
-                        <td>{order.name || "—"}</td>
-                        <td>{order.phone || "—"}</td>
-                        <td className="small">{order.address || "—"}</td>
-                        <td className="small text-nowrap">
-                          {formatTimestamp(order.createdAt)}
-                        </td>
-                        <td className="small">
-                          {order.items?.length ? (
-                            <ul className="mb-0 ps-3">
-                              {order.items.map((item, idx) => (
-                                <li key={idx}>
-                                  {item.productName} — {item.quantity}
-                                  {item.subtotal != null &&
-                                    ` (Rs. ${item.subtotal})`}
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td className="fw-bold text-success">
-                          Rs. {order.totalBill ?? 0}
+                  </thead>
+                  <tbody>
+                    {orders.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="admin-table__empty">
+                          No orders yet.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </Table>
+                    ) : (
+                      orders.map((order) => (
+                        <tr key={order.id}>
+                          <td>{order.name || "—"}</td>
+                          <td>{order.phone || "—"}</td>
+                          <td className="admin-table__small">{order.address || "—"}</td>
+                          <td className="admin-table__small admin-table__nowrap">
+                            {formatTimestamp(order.createdAt)}
+                          </td>
+                          <td className="admin-table__small">
+                            {order.items?.length ? (
+                              <ul className="admin-order-items">
+                                {order.items.map((item, idx) => (
+                                  <li key={idx}>
+                                    {item.productName} - {item.quantity}
+                                    {item.subtotal != null &&
+                                      ` (Rs. ${item.subtotal})`}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td className="admin-table__total">
+                            Rs. {order.totalBill ?? 0}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </Tab>
+          )}
 
-          <Tab eventKey="feedbacks" title="Review Approvals">
-            <Row className="g-3">
-              {feedbacks.length === 0 ? (
-                <Col xs={12}>
-                  <p className="text-muted">No reviews yet.</p>
-                </Col>
-              ) : (
-                feedbacks.map((feed) => (
-                  <Col key={feed.id} xs={12} md={6} lg={4}>
-                    <Card
-                      className={
-                        feed.approved ? "border-success" : "border-warning"
-                      }
+          {activeTab === "feedbacks" && (
+            <div className="admin-panel">
+              <div className="admin-review-grid">
+                {feedbacks.length === 0 ? (
+                  <p className="admin-table__empty">No reviews yet.</p>
+                ) : (
+                  feedbacks.map((feed) => (
+                    <article
+                      key={feed.id}
+                      className={`admin-review-card${
+                        feed.approved
+                          ? " admin-review-card--approved"
+                          : " admin-review-card--pending"
+                      }`}
                     >
-                      <Card.Body>
-                        <div className="d-flex justify-content-between align-items-start mb-2">
-                          <Card.Title className="h6 mb-0">
-                            {feed.name || "Anonymous"}
-                          </Card.Title>
-                          {feed.approved ? (
-                            <Badge bg="success">Approved</Badge>
-                          ) : (
-                            <Badge bg="warning" text="dark">
-                              Pending
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-warning mb-2">
-                          {"★".repeat(feed.rating || 0)}
-                          {"☆".repeat(5 - (feed.rating || 0))}
-                        </div>
-                        <Card.Text className="small text-muted">
-                          {feed.review || feed.comment || "No comment."}
-                        </Card.Text>
-                        <div className="d-flex gap-2">
-                          {!feed.approved && (
-                            <Button
-                              size="sm"
-                              variant="success"
-                              onClick={() => handleApproveFeedback(feed.id)}
-                            >
-                              Approve
-                            </Button>
-                          )}
+                      <div className="admin-review-card__header">
+                        <h3 className="admin-review-card__name">
+                          {feed.name || "Anonymous"}
+                        </h3>
+                        {feed.approved ? (
+                          <span className="admin-badge admin-badge--success">
+                            Approved
+                          </span>
+                        ) : (
+                          <span className="admin-badge admin-badge--warning">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+                      <div className="admin-review-card__stars" aria-hidden>
+                        {"★".repeat(feed.rating || 0)}
+                        {"☆".repeat(5 - (feed.rating || 0))}
+                      </div>
+                      <p className="admin-review-card__text">
+                        {feed.review || feed.comment || "No comment."}
+                      </p>
+                      <div className="admin-review-card__actions">
+                        {!feed.approved && (
                           <Button
                             size="sm"
-                            variant="outline-danger"
-                            onClick={() => handleDeleteFeedback(feed.id)}
+                            variant="primary"
+                            onClick={() => handleApproveFeedback(feed.id)}
                           >
-                            Delete
+                            Approve
                           </Button>
-                        </div>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                ))
-              )}
-            </Row>
-          </Tab>
-        </Tabs>
-      </Container>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="btn--danger"
+                          onClick={() => handleDeleteFeedback(feed.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </article>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
-      <Modal
-        show={showEditModal}
-        onHide={() => setShowEditModal(false)}
-        size="lg"
-        scrollable
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>
-            Edit Product{editingProduct ? `: ${editingProduct.name}` : ""}
-          </Modal.Title>
-        </Modal.Header>
-        <Form onSubmit={handleUpdateProduct}>
-          <Modal.Body>
-            <ProductFormFields
-              form={editForm}
-              setForm={setEditForm}
-              idPrefix="edit"
-            />
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" disabled={saving}>
-              {saving ? "Saving…" : "Save Changes"}
-            </Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
+      {showEditModal && (
+        <>
+          <button
+            type="button"
+            className="admin-modal-backdrop"
+            aria-label="Close dialog"
+            onClick={() => setShowEditModal(false)}
+          />
+          <div className="admin-modal" role="dialog" aria-modal="true">
+            <div className="admin-modal__header">
+              <h2 className="admin-modal__title">
+                Edit Product
+                {editingProduct ? `: ${editingProduct.name}` : ""}
+              </h2>
+              <button
+                type="button"
+                className="admin-modal__close"
+                onClick={() => setShowEditModal(false)}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleUpdateProduct}>
+              <div className="admin-modal__body">
+                <ProductFormFields
+                  form={editForm}
+                  setForm={setEditForm}
+                  idPrefix="edit"
+                />
+              </div>
+              <div className="admin-modal__footer">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" disabled={saving}>
+                  {saving ? "Saving…" : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </>
+      )}
     </>
   );
 }
