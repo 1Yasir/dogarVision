@@ -1,16 +1,16 @@
-import { Link, useLocation } from "react-router-dom"; // 🟢 FIXED: Link aur useLocation import kiya
+import { Link, useLocation } from "react-router-dom";
+import { Container, Row, Col } from "react-bootstrap";
 import { contactInfo, footerLinks } from "../../data/siteData";
 
 export default function Footer() {
   const location = useLocation();
 
-  // Smooth scroll handle for footer links
   const handleFooterLinkClick = (e, href) => {
     const sectionId = href.replace("/#", "");
-    
+
     if (location.pathname === "/") {
-      e.preventDefault(); // Browser refresh rokay ga
-      window.history.pushState(null, null, href); // URL update kare ga bina refresh ke
+      e.preventDefault();
+      window.history.pushState(null, null, href);
       const el = document.getElementById(sectionId);
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
@@ -19,27 +19,26 @@ export default function Footer() {
   };
 
   return (
-    <footer className="footer">
-      <div className="container">
-        <div className="footer__grid">
-          <div>
-            <div className="footer__brand">
-              <span>🐔</span> DogarVision
+    <footer className="bg-body-tertiary border-top mt-5 py-5">
+      <Container>
+        <Row className="g-4">
+          <Col md={4}>
+            <div className="fw-bold fs-5 mb-2">
+              <span aria-hidden="true">🐔</span> DogarVision
             </div>
-            <p className="footer__desc">
+            <p className="text-muted mb-0">
               Providing fresh, healthy, and premium poultry products with the highest biosecurity and hygiene standards.
             </p>
-          </div>
+          </Col>
 
-          <div>
-            <h4 className="footer__heading">Quick Links</h4>
-            <ul className="footer__links">
+          <Col md={4}>
+            <h4 className="h6 fw-semibold mb-3">Quick Links</h4>
+            <ul className="list-unstyled mb-0">
               {footerLinks.map(({ label, href }) => (
-                <li key={label}>
-                  {/* 🟢 FIXED: <a> tag ko <Link> se badal diya aur smooth scroll lagaya */}
-                  <Link 
-                    to={href} 
-                    className="footer__link"
+                <li key={label} className="mb-2">
+                  <Link
+                    to={href}
+                    className="text-decoration-none"
                     onClick={(e) => handleFooterLinkClick(e, href)}
                   >
                     {label}
@@ -47,35 +46,41 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
+          </Col>
 
-          <div>
-            <h4 className="footer__heading">Contact Us</h4>
-            <div className="footer__contact-item">
-              <span>📞</span>
-              <a href={`tel:${contactInfo.phone}`} className="footer__contact-link">
+          <Col md={4}>
+            <h4 className="h6 fw-semibold mb-3">Contact Us</h4>
+            <div className="mb-2">
+              <span aria-hidden="true">📞</span>
+              <a href={`tel:${contactInfo.phone}`} className="ms-2 text-decoration-none">
                 {contactInfo.phone}
               </a>
             </div>
-            <div className="footer__contact-item">
-              <span>💬</span>
-              {/* 🟢 TIP: WhatsApp link ko tel: ki jagah href par direct call ya chat par lagaya ja sakta hai */}
-              <a href={`https://wa.me/${contactInfo.whatsapp.replace('+', '')}`} target="_blank" rel="noreferrer" className="footer__contact-link">
+            <div className="mb-2">
+              <span aria-hidden="true">💬</span>
+              <a
+                href={`https://wa.me/${contactInfo.whatsapp.replace("+", "")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="ms-2 text-decoration-none"
+              >
                 WhatsApp: {contactInfo.whatsapp}
               </a>
             </div>
-            <div className="footer__contact-item">
-              <span>📍</span>
-              <span>{contactInfo.address}</span>
+            <div>
+              <span aria-hidden="true">📍</span>
+              <span className="ms-2 text-muted">{contactInfo.address}</span>
             </div>
-          </div>
-        </div>
+          </Col>
+        </Row>
 
-        <div className="footer__bottom">
-          <span>© 2026 DogarVision Poultry Farm. All rights reserved.</span>
-          <span>Fresh · Organic · Trusted</span>
-        </div>
-      </div>
+        <Row className="mt-4 pt-3 border-top">
+          <Col className="text-muted small d-flex flex-wrap justify-content-between gap-2">
+            <span>© 2026 DogarVision Poultry Farm. All rights reserved.</span>
+            <span>Fresh · Organic · Trusted</span>
+          </Col>
+        </Row>
+      </Container>
     </footer>
   );
 }

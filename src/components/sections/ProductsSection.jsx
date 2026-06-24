@@ -1,42 +1,49 @@
 import { useMemo, useState, useEffect } from "react";
-// Humne yahan se static 'products' ko hata diya hai, ab sirf filters aur sorting helper chahiye
+import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
+import Button from "react-bootstrap/Button";
 import { productFilters, getSortedProducts } from "../../data/siteData";
-import { useLanguage } from "../../context/LanguageContext";
+import { productsCopy } from "../../data/copy";
+import { useCart } from "../../context/CartContext";
 import SectionTitle from "../common/SectionTitle";
 import ProductCard from "./ProductCard";
-
-// Firebase Imports
-import { db } from "../../firebase"; // Sahi path check kar lein apne project ke mutabiq
+import { db } from "../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 
 export default function ProductsSection() {
-  const [productsList, setProductsList] = useState([]); // Live products state
+  const [productsList, setProductsList] = useState([]);
   const [activeFilter, setActiveFilter] = useState("all");
-  const [loading, setLoading] = useState(true); // Loading state
-  const { t } = useLanguage();
+  const [loading, setLoading] = useState(true);
+  const { syncStockCounts } = useCart();
 
-  // 🔴 Firebase se real-time data fetch karne ka effect
   useEffect(() => {
     const productsRef = collection(db, "products");
-
-    // onSnapshot se data real-time update hoga (jaise hi stock kam hoga frontend khud badal jaye ga)
-    const unsubscribe = onSnapshot(productsRef, (snapshot) => {
-      const fetchedProducts = snapshot.docs.map((doc) => ({
-        ...doc.data(),
-        // Agat document ID (id) database fields mein nahi hai to hum use add kar dete hain
-        id: doc.id, 
-      }));
-      setProductsList(fetchedProducts);
-      setLoading(false);
-    }, (error) => {
-      console.error("Firebase se products lane mein error: ", error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe(); // Component unmount hone par connection close
+    const unsubscribe = onSnapshot(
+      productsRef,
+      (snapshot) => {
+        const fetchedProducts = snapshot.docs.map((docSnap) => ({
+          ...docSnap.data(),
+          id: docSnap.id,
+        }));
+        setProductsList(fetchedProducts);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error loading products:", error);
+        setLoading(false);
+      }
+    );
+    return () => unsubscribe();
   }, []);
 
-  // Filtered logic ab static products ki jagah 'productsList' state use karegi
+  useEffect(() => {
+    if (productsList.length > 0) {
+      syncStockCounts(productsList);
+    }
+  }, [productsList, syncStockCounts]);
+
   const filtered = useMemo(() => {
     const list =
       activeFilter === "all"
@@ -47,39 +54,47 @@ export default function ProductsSection() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "50px", fontSize: "1.2rem", fontWeight: "bold" }}>
-        Products load ho rahi hain...
-      </div>
+      <section id="products" className="py-5">
+        <Container className="text-center">
+          <p className="text-muted">{productsCopy.loading}</p>
+        </Container>
+      </section>
     );
   }
 
   return (
-    <section id="products" className="section">
-      <div className="container">
+    <section id="products" className="py-5">
+      <Container>
         <SectionTitle
-          label={t("products.label")}
-          title={t("products.title")}
-          desc={t("products.desc")}
+          label={productsCopy.label}
+          title={productsCopy.title}
+          desc={productsCopy.desc}
         />
 
-        <div className="products__filters">
-          {productFilters.map(({ id }) => (
-            <button
-              key={id}
-              className={`filter-btn ${activeFilter === id ? "filter-btn--active" : ""}`}
-              onClick={() => setActiveFilter(id)}
-            >
-              {t(`products.filters.${id}`)}
-            </button>
-          ))}
+        <div className="d-flex justify-center mb-4">
+          <ButtonGroup className="flex-wrap">
+            {productFilters.map(({ id }) => (
+              <Button
+                key={id}
+                variant={activeFilter === id ? "success" : "outline-success"}
+                onClick={() => setActiveFilter(id)}
+                size="sm"
+                className="mb-1"
+              >
+                {productsCopy.filters[id]}
+              </Button>
+            ))}
+          </ButtonGroup>
         </div>
 
-        <div className="products-grid">
+        <Row className="g-4">
           {filtered.map((product) => (
-            <ProductCard key={product.id} {...product} />
+            <Col key={product.id} sm={6} lg={4}>
+              <ProductCard {...product} />
+            </Col>
           ))}
-        </div>
-      </div>
+        </Row>
+      </Container>
     </section>
   );
 }

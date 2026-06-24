@@ -1,155 +1,179 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import Card from "react-bootstrap/Card";
+import Badge from "react-bootstrap/Badge";
+import Button from "react-bootstrap/Button";
 import { useCart } from "../../context/CartContext";
-import { useLanguage } from "../../context/LanguageContext";
-import Button from "../common/Button";
+import { productsCopy } from "../../data/copy";
+import { clampQuantity, roundQuantity, STOCK_MAX_MESSAGE } from "../../utils/stockValidation";
+import { useToast } from "../../context/ToastContext";
 
 function formatPrice(amount) {
-  return `Rs. ${amount.toLocaleString("en-PK")}`;
+  return `Rs. ${Number(amount).toLocaleString("en-PK")}`;
 }
 
 export default function ProductCard({
   id,
-  price,
-  detailPath,
+  name,
+  desc,
+  badge: productBadge,
+  imageLabel,
+  emoji,
   unitPrice,
   unit,
   unitType,
   kgOptions = [],
-  emoji,
   available = true,
   discountPercentage = 0,
+  stockCount = 0,
+  detailPath,
 }) {
   const { addToCart, openCart } = useCart();
-  const { t } = useLanguage();
-  const [selectedKg] = useState(kgOptions[0] ?? 1);
+  const { showToast } = useToast();
   const [addedFeedback, setAddedFeedback] = useState(false);
 
-  const itemCopy = t(`products.items.${id}`);
-  
-  const name = itemCopy.name;
-  const desc = itemCopy.desc;
-  const badge = available ? itemCopy.badge : t("products.comingSoon");
-  const imageLabel = itemCopy.imageLabel;
+  const stock = Math.max(0, Number(stockCount) || 0);
+  const isAvailable = available && stock > 0;
+  const badgeText = isAvailable
+    ? productBadge || productsCopy.filters.all
+    : productsCopy.comingSoon;
+  const path = detailPath || (id ? `/product/${id}` : null);
 
-  // 🟢 NEW GLOBAL LOGIC: Yeh har unit par kaam karegi (kg, unit, liter, crate)
-  const hasDiscount = discountPercentage > 0;
+  const hasDiscount = Number(discountPercentage) > 0;
   const isKgProduct = unitType === "kg";
-  
-  // Base Price hamesha number wale 'unitPrice' se calculate hogi. 
-  // Agar kg wala product hai toh select kiye gaye weight se multiply hoga, nahi toh 1 se multiply hoga (jaise eggs, milk, chicken)
+  const selectedKg = kgOptions[0] ?? 0.5;
   const multiplier = isKgProduct ? selectedKg : 1;
-  const basePrice = unitPrice * multiplier;
-  
-  // Final discounted price calculation
-  const finalPrice = hasDiscount 
-    ? basePrice - (basePrice * discountPercentage) / 100 
+  const basePrice = Number(unitPrice) * multiplier;
+  const finalPrice = hasDiscount
+    ? basePrice - (basePrice * discountPercentage) / 100
     : basePrice;
 
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!available) return;
+    if (!isAvailable) return;
 
     const quantity = isKgProduct ? selectedKg : 1;
-    addToCart({ id, name, emoji, unitPrice, unit, unitType }, quantity);
+    const rounded = roundQuantity(quantity, unitType ?? "unit");
+    const { value, hitMax } = clampQuantity(rounded, stock);
+    if (hitMax) showToast(STOCK_MAX_MESSAGE, "warning");
+
+    addToCart(
+      {
+        id,
+        name,
+        emoji,
+        unitPrice,
+        unit,
+        unitType,
+        stockCount: stock,
+        discountPercentage,
+      },
+      value
+    );
     openCart();
     setAddedFeedback(true);
     setTimeout(() => setAddedFeedback(false), 1500);
   };
 
   const handleCardClick = (e) => {
-    if (!available) {
+    if (!isAvailable) {
       e.preventDefault();
-      alert(`Maazrat! ${name} abhi dastayab nahi hai. Yeh jald hi un-qarib lounch ki jaye gi.`);
+      alert(productsCopy.unavailableAlert(name));
     }
   };
 
-  const cartControls = (
-    <div className="product-card__cart-controls">
-      <Button
-        type="button"
-        variant="primary"
-        size="sm"
-        onClick={handleAddToCart}
-        disabled={!available}
-        className={addedFeedback ? "product-card__add-btn--added" : ""}
-      >
-        {addedFeedback ? t("products.added") : t("products.addToCart")}
-      </Button>
-    </div>
-  );
-
   const imageBlock = (
-    <div className="product-card__image">
-      <span
-        className={`product-card__badge${!available ? " product-card__badge--unavailable" : ""}`}
-      >
-        {badge}
+    <div
+      className="position-relative text-center py-4 bg-light rounded-top"
+      style={{ minHeight: "160px" }}
+    >
+      <Badge bg="warning" className="position-absolute top-0 start-0 m-2">
+        {badgeText}
+      </Badge>
+      <span style={{ fontSize: "3.5rem", lineHeight: 1 }} aria-hidden="true">
+        {emoji}
       </span>
-      <span className="product-card__emoji">{emoji}</span>
-      <span className="product-card__image-label">{imageLabel}</span>
+      {imageLabel && (
+        <span className="d-block small text-muted mt-2">{imageLabel}</span>
+      )}
     </div>
   );
 
-  // 🟢 DYNAMIC DISPLAY BLOCK: Pura price layout bina error ke dunya ke har unit par fit baithega
-  const bodyBlock = (
+  const priceBlock = (
+    <div className="d-flex align-items-center gap-2 flex-wrap mb-2">
+      {hasDiscount ? (
+        <>
+          <span className="fw-bold text-success">
+            {isKgProduct
+              ? `${formatPrice(finalPrice)} (${selectedKg} ${unit})`
+              : `${formatPrice(finalPrice)} / ${unit}`}
+          </span>
+          <span className="text-muted small text-decoration-line-through">
+            {isKgProduct ? formatPrice(basePrice) : `${formatPrice(unitPrice)} / ${unit}`}
+          </span>
+          <Badge bg="danger">{discountPercentage}% OFF</Badge>
+        </>
+      ) : (
+        <span className="fw-bold text-success">
+          {isKgProduct
+            ? `${formatPrice(basePrice)} (${selectedKg} ${unit})`
+            : `${formatPrice(unitPrice)} / ${unit}`}
+        </span>
+      )}
+    </div>
+  );
+
+  const bodyContent = (
     <>
-      <h3 className="product-card__name">{name}</h3>
-      <p className="product-card__desc">{desc}</p>
-      
-      <div className="product-card__price-wrapper" style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", margin: "6px 0" }}>
-        {hasDiscount ? (
-          <>
-            {/* New Discounted Price */}
-            <p className="product-card__price" style={{ margin: 0, fontWeight: "bold" }}>
-              {isKgProduct ? `${formatPrice(finalPrice)} (${selectedKg} ${unit})` : `${formatPrice(finalPrice)} / ${unit}`}
-            </p>
-            {/* Old Price (Crossed out) */}
-            <span className="product-card__old-price" style={{ textDecoration: "line-through", color: "#888", fontSize: "0.85rem" }}>
-              {isKgProduct ? formatPrice(basePrice) : `${formatPrice(unitPrice)} / ${unit}`}
-            </span>
-            {/* Discount Percentage Tag */}
-            <span className="product-card__discount-badge" style={{ backgroundColor: "#e11d48", color: "#fff", fontSize: "0.75rem", padding: "2px 6px", borderRadius: "4px", fontWeight: "bold" }}>
-              {discountPercentage}% OFF
-            </span>
-          </>
-        ) : (
-          /* Normal Price if no discount */
-          <p className="product-card__price" style={{ margin: 0 }}>
-            {isKgProduct ? `${formatPrice(basePrice)} (${selectedKg} ${unit})` : `${formatPrice(unitPrice)} / ${unit}`}
-          </p>
-        )}
-      </div>
+      <Card.Title as="h3" className="h5">{name}</Card.Title>
+      {desc && <Card.Text className="text-muted small">{desc}</Card.Text>}
+      {priceBlock}
     </>
   );
 
-  const cardClass = `product-card${!available ? " product-card--unavailable" : ""}${detailPath ? " product-card--has-detail" : ""}`;
+  const cartButton = (
+    <Button
+      variant="success"
+      size="sm"
+      className="w-100"
+      onClick={handleAddToCart}
+      disabled={!isAvailable}
+    >
+      {addedFeedback ? productsCopy.added : productsCopy.addToCart}
+    </Button>
+  );
 
-  if (detailPath) {
+  if (path) {
     return (
-      <article className={cardClass}>
-        <Link to={detailPath} className="product-card__detail-link" onClick={handleCardClick}>
+      <Card className="shadow-sm h-100 border-0">
+        <Link
+          to={path}
+          className="text-decoration-none text-body stretched-link"
+          onClick={handleCardClick}
+        >
           {imageBlock}
-          <div className="product-card__body product-card__body--linked">
-            {bodyBlock}
-            <span className="product-card__view-detail">
-              {available ? t("products.viewDetails") : t("products.comingSoon")}
+          <Card.Body>
+            {bodyContent}
+            <span className="small text-success">
+              {isAvailable ? productsCopy.viewDetails : productsCopy.comingSoon}
             </span>
-          </div>
+          </Card.Body>
         </Link>
-        <div className="product-card__footer">{cartControls}</div>
-      </article>
+        <Card.Footer className="bg-white border-0 pt-0" style={{ position: "relative", zIndex: 2 }}>
+          {cartButton}
+        </Card.Footer>
+      </Card>
     );
   }
 
   return (
-    <div className={cardClass}>
+    <Card className="shadow-sm h-100 border-0">
       {imageBlock}
-      <div className="product-card__body">
-        {bodyBlock}
-        {cartControls}
-      </div>
-    </div>
+      <Card.Body className="d-flex flex-column">
+        {bodyContent}
+        <div className="mt-auto">{cartButton}</div>
+      </Card.Body>
+    </Card>
   );
 }

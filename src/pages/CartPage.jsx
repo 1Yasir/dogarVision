@@ -1,42 +1,47 @@
 import { useEffect } from "react";
+import Container from "react-bootstrap/Container";
 import NavBar from "../components/layout/NavBar";
 import Footer from "../components/layout/Footer";
 import WhatsAppFloat from "../components/common/WhatsAppFloat";
+import SeoHelmet from "../components/common/SeoHelmet";
 import CartContent from "../components/cart/CartContent";
 import SectionTitle from "../components/common/SectionTitle";
 import Breadcrumbs from "../components/common/Breadcrumbs";
-import { useLanguage } from "../context/LanguageContext";
+import { cartCopy, seoCopy } from "../data/copy";
 
 export default function CartPage() {
-  const { t } = useLanguage();
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
   return (
-    <div className="poultry cart-page">
+    <div className="bg-body min-vh-100 d-flex flex-column">
+      <SeoHelmet
+        title={seoCopy.cart.title}
+        description={seoCopy.cart.description}
+        keywords={seoCopy.cart.keywords}
+      />
       <NavBar />
 
-      <main className="cart-page__main">
-        <div className="container">
+      <main className="py-4">
+        <Container>
           <Breadcrumbs
             items={[
-              { label: t("cart.breadcrumbHome"), to: "/" },
-              { label: t("cart.breadcrumbCart"), to: "/cart" },
+              { label: cartCopy.breadcrumbHome, to: "/" },
+              { label: cartCopy.breadcrumbCart, to: "/cart" },
             ]}
           />
 
           <SectionTitle
-            label={t("cart.label")}
-            title={t("cart.title")}
-            desc={t("cart.desc")}
+            label={cartCopy.label}
+            title={cartCopy.title}
+            desc={cartCopy.desc}
           />
 
-          <div className="cart-page__panel">
+          <div className="mt-4">
             <CartContent />
           </div>
-        </div>
+        </Container>
       </main>
 
       <Footer />

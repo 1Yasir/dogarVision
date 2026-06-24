@@ -1,31 +1,33 @@
+import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
 import { features } from "../../data/siteData";
-import { useLanguage } from "../../context/LanguageContext";
+import { aboutCopy } from "../../data/copy";
 import SectionTitle from "../common/SectionTitle";
 import FeatureCard from "./FeatureCard";
 
 export default function AboutSection() {
-  const { t } = useLanguage();
-
   return (
-    <section id="about" className="section section--alt">
-      <div className="container">
+    <section id="about" className="py-5 bg-light">
+      <Container>
         <SectionTitle
-          label={t("about.label")}
-          title={t("about.title")}
-          desc={t("about.desc")}
+          label={aboutCopy.label}
+          title={aboutCopy.title}
+          desc={aboutCopy.desc}
         />
 
-        <div className="features-grid">
+        <Row className="g-4 mt-2">
           {features.map(({ key, icon }) => (
-            <FeatureCard
-              key={key}
-              icon={icon}
-              title={t(`about.features.${key}.title`)}
-              desc={t(`about.features.${key}.desc`)}
-            />
+            <Col key={key} md={4}>
+              <FeatureCard
+                icon={icon}
+                title={aboutCopy.features[key].title}
+                desc={aboutCopy.features[key].desc}
+              />
+            </Col>
           ))}
-        </div>
-      </div>
+        </Row>
+      </Container>
     </section>
   );
 }

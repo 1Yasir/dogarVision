@@ -1,48 +1,386 @@
-import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, addDoc } from "firebase/firestore";
-import { db } from "../firebase"; 
-import Button from "../components/common/Button"; 
+import { useEffect, useMemo, useState } from "react";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  updateDoc,
+} from "firebase/firestore";
+import {
+  Accordion,
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Col,
+  Container,
+  Form,
+  Modal,
+  Row,
+  Tab,
+  Table,
+  Tabs,
+} from "react-bootstrap";
+import SeoHelmet from "../components/common/SeoHelmet";
+import { seoCopy } from "../data/copy";
+import { db } from "../firebase";
+import { clampAdminNumeric } from "../utils/stockValidation";
+
+const EMPTY_PRODUCT_FORM = {
+  name: "",
+  price: "",
+  unitPrice: "",
+  originalPrice: "",
+  discountPercentage: "0",
+  unit: "kg",
+  unitType: "kg",
+  stockCount: "",
+  emoji: "📦",
+  desc: "",
+  badge: "",
+  category: "dairy",
+  imageLabel: "",
+  detailPath: "",
+  available: true,
+  kgOptions: "0.5,1,2",
+};
+
+function parseKgOptions(raw) {
+  return raw
+    .split(",")
+    .map((s) => parseFloat(s.trim()))
+    .filter((n) => !Number.isNaN(n));
+}
+
+function buildProductPayload(form) {
+  const unitPrice = clampAdminNumeric(form.unitPrice);
+  const originalPrice =
+    clampAdminNumeric(form.originalPrice) || unitPrice;
+  const stockCount = clampAdminNumeric(form.stockCount);
+  const discountPercentage = clampAdminNumeric(form.discountPercentage);
+  const name = form.name.trim();
+  const unit = form.unit.trim() || "kg";
+
+  return {
+    name,
+    price: form.price.trim() || `Rs. ${unitPrice} / ${unit}`,
+    unitPrice,
+    originalPrice,
+    discountPercentage,
+    unit,
+    unitType: form.unitType.trim() || "kg",
+    stockCount,
+    emoji: form.emoji.trim() || "📦",
+    desc: form.desc.trim(),
+    badge: form.badge.trim(),
+    category: form.category.trim(),
+    imageLabel: form.imageLabel.trim() || name,
+    detailPath:
+      form.detailPath.trim() ||
+      `/product/${name.toLowerCase().replace(/\s+/g, "-")}`,
+    available: form.available,
+    kgOptions: parseKgOptions(form.kgOptions).length
+      ? parseKgOptions(form.kgOptions)
+      : [0.5, 1, 2],
+  };
+}
+
+function productToForm(prod) {
+  return {
+    name: prod.name || "",
+    price: prod.price || "",
+    unitPrice: String(prod.unitPrice ?? ""),
+    originalPrice: String(prod.originalPrice ?? ""),
+    discountPercentage: String(prod.discountPercentage ?? "0"),
+    unit: prod.unit || "kg",
+    unitType: prod.unitType || "kg",
+    stockCount: String(prod.stockCount ?? ""),
+    emoji: prod.emoji || "📦",
+    desc: prod.desc || "",
+    badge: prod.badge || "",
+    category: prod.category || "dairy",
+    imageLabel: prod.imageLabel || "",
+    detailPath: prod.detailPath || "",
+    available: prod.available !== false,
+    kgOptions: Array.isArray(prod.kgOptions)
+      ? prod.kgOptions.join(",")
+      : "0.5,1,2",
+  };
+}
+
+function formatTimestamp(ts) {
+  if (!ts) return "—";
+  if (typeof ts.toDate === "function") {
+    return ts.toDate().toLocaleString();
+  }
+  return "—";
+}
+
+function ProductFormFields({ form, setForm, idPrefix = "" }) {
+  const clampField = (field) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: String(clampAdminNumeric(prev[field])),
+    }));
+  };
+
+  return (
+    <Row className="g-3">
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-name`}>
+          <Form.Label>Product Name *</Form.Label>
+          <Form.Control
+            required
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="e.g. Pure Desi Ghee"
+          />
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-imageLabel`}>
+          <Form.Label>Image Label</Form.Label>
+          <Form.Control
+            value={form.imageLabel}
+            onChange={(e) =>
+              setForm({ ...form, imageLabel: e.target.value })
+            }
+            placeholder="e.g. DESI GHEE"
+          />
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-emoji`}>
+          <Form.Label>Emoji Icon</Form.Label>
+          <Form.Control
+            value={form.emoji}
+            onChange={(e) => setForm({ ...form, emoji: e.target.value })}
+            placeholder="e.g. 🍯"
+          />
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-unitPrice`}>
+          <Form.Label>Unit Price (Rs.) *</Form.Label>
+          <Form.Control
+            required
+            type="number"
+            min={0}
+            step="any"
+            value={form.unitPrice}
+            onChange={(e) =>
+              setForm({ ...form, unitPrice: e.target.value })
+            }
+            onBlur={() => clampField("unitPrice")}
+          />
+          <Form.Text muted>
+            Clamped to 0 on blur — prices cannot be negative.
+          </Form.Text>
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-originalPrice`}>
+          <Form.Label>Original Price (Rs.)</Form.Label>
+          <Form.Control
+            type="number"
+            min={0}
+            step="any"
+            value={form.originalPrice}
+            onChange={(e) =>
+              setForm({ ...form, originalPrice: e.target.value })
+            }
+            onBlur={() => clampField("originalPrice")}
+          />
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-discountPercentage`}>
+          <Form.Label>Discount %</Form.Label>
+          <Form.Control
+            type="number"
+            min={0}
+            step="any"
+            value={form.discountPercentage}
+            onChange={(e) =>
+              setForm({ ...form, discountPercentage: e.target.value })
+            }
+            onBlur={() => clampField("discountPercentage")}
+          />
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-price`}>
+          <Form.Label>Price Display Text</Form.Label>
+          <Form.Control
+            value={form.price}
+            onChange={(e) => setForm({ ...form, price: e.target.value })}
+            placeholder="e.g. Rs. 3500 / kg"
+          />
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-unit`}>
+          <Form.Label>Unit</Form.Label>
+          <Form.Control
+            value={form.unit}
+            onChange={(e) => setForm({ ...form, unit: e.target.value })}
+            placeholder="kg"
+          />
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-unitType`}>
+          <Form.Label>Unit Type</Form.Label>
+          <Form.Control
+            value={form.unitType}
+            onChange={(e) =>
+              setForm({ ...form, unitType: e.target.value })
+            }
+            placeholder="kg"
+          />
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-stockCount`}>
+          <Form.Label>Stock Count *</Form.Label>
+          <Form.Control
+            required
+            type="number"
+            min={0}
+            step="1"
+            value={form.stockCount}
+            onChange={(e) =>
+              setForm({ ...form, stockCount: e.target.value })
+            }
+            onBlur={() => clampField("stockCount")}
+          />
+          <Form.Text muted>
+            Stock is clamped with clampAdminNumeric — never stored below 0.
+          </Form.Text>
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-badge`}>
+          <Form.Label>Badge</Form.Label>
+          <Form.Control
+            value={form.badge}
+            onChange={(e) => setForm({ ...form, badge: e.target.value })}
+            placeholder="e.g. New Launch"
+          />
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-category`}>
+          <Form.Label>Category</Form.Label>
+          <Form.Select
+            value={form.category}
+            onChange={(e) =>
+              setForm({ ...form, category: e.target.value })
+            }
+          >
+            <option value="dairy">Dairy</option>
+            <option value="poultry">Poultry</option>
+            <option value="organic">Organic</option>
+            <option value="eggs">Eggs</option>
+            <option value="chicken">Chicken</option>
+            <option value="chicks">Chicks</option>
+            <option value="achar">Achar</option>
+          </Form.Select>
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-detailPath`}>
+          <Form.Label>Detail Path</Form.Label>
+          <Form.Control
+            value={form.detailPath}
+            onChange={(e) =>
+              setForm({ ...form, detailPath: e.target.value })
+            }
+            placeholder="/product/ghee"
+          />
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4}>
+        <Form.Group controlId={`${idPrefix}-kgOptions`}>
+          <Form.Label>kg Options (comma-separated)</Form.Label>
+          <Form.Control
+            value={form.kgOptions}
+            onChange={(e) =>
+              setForm({ ...form, kgOptions: e.target.value })
+            }
+            placeholder="0.5,1,2"
+          />
+        </Form.Group>
+      </Col>
+
+      <Col md={6} lg={4} className="d-flex align-items-end">
+        <Form.Group controlId={`${idPrefix}-available`}>
+          <Form.Check
+            type="checkbox"
+            label="Available for purchase"
+            checked={form.available}
+            onChange={(e) =>
+              setForm({ ...form, available: e.target.checked })
+            }
+          />
+        </Form.Group>
+      </Col>
+
+      <Col xs={12}>
+        <Form.Group controlId={`${idPrefix}-desc`}>
+          <Form.Label>Description</Form.Label>
+          <Form.Control
+            as="textarea"
+            rows={2}
+            value={form.desc}
+            onChange={(e) => setForm({ ...form, desc: e.target.value })}
+            placeholder="Product description…"
+          />
+        </Form.Group>
+      </Col>
+    </Row>
+  );
+}
 
 export default function AdminDashboard() {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [feedbacks, setFeedbacks] = useState([]);
-  const [activeTab, setActiveTab] = useState("products");
-  const [stockInputs, setStockInputs] = useState({});
 
-  // 🟢 Saare Database Fields Ki States
-  const [newProdName, setNewProdName] = useState("");
-  const [newProdPriceString, setNewProdPriceString] = useState(""); // e.g. "Rs. 3500 / kg"
-  const [newProdUnitPrice, setNewProdUnitPrice] = useState(""); // e.g. 3500
-  const [newProdOriginalPrice, setNewProdOriginalPrice] = useState(""); // e.g. 4000
-  const [newProdDiscount, setNewProdDiscount] = useState("0");
-  const [newProdUnit, setNewProdUnit] = useState("kg");
-  const [newProdUnitType, setNewProdUnitType] = useState("kg");
-  const [newProdStock, setNewProdStock] = useState("");
-  const [newProdEmoji, setNewProdEmoji] = useState("📦");
-  const [newProdDesc, setNewProdDesc] = useState("");
-  const [newProdBadge, setNewProdBadge] = useState(""); // e.g. "New Launch" ya "Hot"
-  const [newProdCategory, setNewProdCategory] = useState("dairy"); // e.g. dairy, poultry
-  const [newProdImageLabel, setNewProdImageLabel] = useState(""); // e.g. "Desi Ghee"
-  const [newProdDetailPath, setNewProdDetailPath] = useState(""); // e.g. "/product/ghee"
+  const [createForm, setCreateForm] = useState(EMPTY_PRODUCT_FORM);
+  const [editForm, setEditForm] = useState(EMPTY_PRODUCT_FORM);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const qProducts = query(collection(db, "products"));
-    const unsubProducts = onSnapshot(qProducts, (snapshot) => {
-      const prodList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setProducts(prodList);
+    const unsubProducts = onSnapshot(collection(db, "products"), (snapshot) => {
+      setProducts(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
 
     const qOrders = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     const unsubOrders = onSnapshot(qOrders, (snapshot) => {
-      const ordList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setOrders(ordList);
+      setOrders(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
 
-    const qFeedbacks = query(collection(db, "feedbacks"));
-    const unsubFeedbacks = onSnapshot(qFeedbacks, (snapshot) => {
-      const feedList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setFeedbacks(feedList);
+    const unsubFeedbacks = onSnapshot(collection(db, "feedbacks"), (snapshot) => {
+      setFeedbacks(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
 
     return () => {
@@ -52,282 +390,361 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  // 🟢 Naya Product Firestore Mein Save Karne Ka Handler
-  const handleAddProduct = async (e) => {
+  const totalRevenue = useMemo(
+    () => orders.reduce((sum, o) => sum + (Number(o.totalBill) || 0), 0),
+    [orders]
+  );
+
+  const handleCreateProduct = async (e) => {
     e.preventDefault();
-    if (!newProdName || !newProdUnitPrice || !newProdStock) {
-      alert("Plz Name, Unit Price aur Stock laazmi likhein!");
+    if (!createForm.name.trim() || createForm.unitPrice === "" || createForm.stockCount === "") {
+      alert("Name, unit price, and stock count are required.");
       return;
     }
 
+    setSaving(true);
     try {
-      // Automatic detailPath aur imageLabel agar khali hon
-      const formattedPath = newProdDetailPath.trim() || `/product/${newProdName.toLowerCase().replace(/\s+/g, "-")}`;
-      const formattedImageLabel = newProdImageLabel.trim() || newProdName.trim();
-      const formattedPriceString = newProdPriceString.trim() || `Rs. ${newProdUnitPrice} / ${newProdUnit}`;
-
-      await addDoc(collection(db, "products"), {
-        name: newProdName.trim(),
-        price: formattedPriceString,
-        unitPrice: Number(newProdUnitPrice),
-        originalPrice: newProdOriginalPrice ? Number(newProdOriginalPrice) : Number(newProdUnitPrice),
-        discountPercentage: Number(newProdDiscount),
-        unit: newProdUnit.trim(),
-        unitType: newProdUnitType.trim(),
-        stockCount: Number(newProdStock),
-        emoji: newProdEmoji.trim(),
-        desc: newProdDesc.trim(),
-        badge: newProdBadge.trim(),
-        category: newProdCategory.trim(),
-        imageLabel: formattedImageLabel,
-        detailPath: formattedPath,
-        available: true, // Hamesha naya product starting mein true hoga
-        kgOptions: [0.5, 1, 2] // Default weight options dropdown ke liye
-      });
-
-      alert("🎉 Naya product saari fields ke sath add ho gaya!");
-      
-      // Form fields reset
-      setNewProdName("");
-      setNewProdPriceString("");
-      setNewProdUnitPrice("");
-      setNewProdOriginalPrice("");
-      setNewProdDiscount("0");
-      setNewProdUnit("kg");
-      setNewProdUnitType("kg");
-      setNewProdStock("");
-      setNewProdEmoji("📦");
-      setNewProdDesc("");
-      setNewProdBadge("");
-      setNewProdCategory("dairy");
-      setNewProdImageLabel("");
-      setNewProdDetailPath("");
+      await addDoc(collection(db, "products"), buildProductPayload(createForm));
+      setCreateForm(EMPTY_PRODUCT_FORM);
     } catch (err) {
-      console.error("Error adding product:", err);
-      alert("Product add karne mein koi masla hua hai.");
+      console.error(err);
+      alert("Could not add product. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleStockUpdate = async (productId) => {
-    const newStock = parseInt(stockInputs[productId]);
-    if (isNaN(newStock) || newStock < 0) {
-      alert("Plz sahi stock number likhein!");
-      return;
-    }
+  const openEditModal = (prod) => {
+    setEditingProduct(prod);
+    setEditForm(productToForm(prod));
+    setShowEditModal(true);
+  };
+
+  const handleUpdateProduct = async (e) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+
+    setSaving(true);
     try {
-      const productRef = doc(db, "products", productId);
-      await updateDoc(productRef, { stockCount: newStock });
-      alert("Stock kamyabi se update ho gaya!");
-      setStockInputs({ ...stockInputs, [productId]: "" });
+      await updateDoc(
+        doc(db, "products", editingProduct.id),
+        buildProductPayload(editForm)
+      );
+      setShowEditModal(false);
+      setEditingProduct(null);
     } catch (err) {
       console.error(err);
+      alert("Could not update product. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteProduct = async (prod) => {
+    if (
+      !window.confirm(
+        `Delete "${prod.name}"? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    if (
+      !window.confirm(
+        "Are you absolutely sure? Click OK to permanently delete this product."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, "products", prod.id));
+    } catch (err) {
+      console.error(err);
+      alert("Could not delete product. Please try again.");
     }
   };
 
   const handleApproveFeedback = async (id) => {
     try {
-      const feedRef = doc(db, "feedbacks", id);
-      await updateDoc(feedRef, { approved: true });
+      await updateDoc(doc(db, "feedbacks", id), { approved: true });
     } catch (err) {
       console.error(err);
+      alert("Could not approve review. Please try again.");
     }
   };
 
   const handleDeleteFeedback = async (id) => {
-    if (!window.confirm("Kya aap yeh review delete karna chahte hain?")) return;
+    if (!window.confirm("Delete this review permanently?")) return;
     try {
-      const feedRef = doc(db, "feedbacks", id);
-      await deleteDoc(feedRef);
+      await deleteDoc(doc(db, "feedbacks", id));
     } catch (err) {
       console.error(err);
+      alert("Could not delete review. Please try again.");
     }
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto", fontFamily: "sans-serif" }}>
-      <h1 style={{ borderBottom: "2px solid #333", paddingBottom: "10px" }}>ℹ️ Dogar Vision - Admin Dashboard</h1>
-      
-      {/* Navigation Tabs */}
-      <div style={{ display: "flex", gap: "10px", margin: "20px 0" }}>
-        <button className={`btn ${activeTab === 'products' ? 'btn--primary' : 'btn--outline'}`} onClick={() => setActiveTab("products")}>📦 Stock & Products</button>
-        <button className={`btn ${activeTab === 'orders' ? 'btn--primary' : 'btn--outline'}`} onClick={() => setActiveTab("orders")}>🛒 Customer Orders ({orders.length})</button>
-        <button className={`btn ${activeTab === 'feedbacks' ? 'btn--primary' : 'btn--outline'}`} onClick={() => setActiveTab("feedbacks")}>⭐ Reviews Approval</button>
-      </div>
+    <>
+      <SeoHelmet {...seoCopy.admin} />
 
-      {/* --- PRODUCTS TAB --- */}
-      {activeTab === "products" && (
-        <div>
-          {/* Detailed Add Product Form */}
-          <div style={{ backgroundColor: "#f9f9f9", padding: "20px", borderRadius: "8px", border: "1px solid #ddd", marginBottom: "30px" }}>
-            <h3 style={{ marginTop: 0, color: "#2e7d32" }}>➕ Add New Product (All Database Fields)</h3>
-            <form onSubmit={handleAddProduct} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "15px" }}>
-              
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Product Name:</label>
-                <input type="text" style={{ width: "100%", padding: "6px" }} placeholder="e.g. Pure Desi Ghee" value={newProdName} onChange={(e) => setNewProdName(e.target.value)} required />
-              </div>
+      <Container fluid="lg" className="py-4">
+        <h1 className="mb-4 border-bottom pb-2">Dogar Vision — Admin Dashboard</h1>
 
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Image Label (Text on Image):</label>
-                <input type="text" style={{ width: "100%", padding: "6px" }} placeholder="e.g. DESI GHEE" value={newProdImageLabel} onChange={(e) => setNewProdImageLabel(e.target.value)} />
-              </div>
-
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Emoji Icon:</label>
-                <input type="text" style={{ width: "100%", padding: "6px" }} placeholder="e.g. 🍯, 🥚, 🍗" value={newProdEmoji} onChange={(e) => setNewProdEmoji(e.target.value)} />
-              </div>
-
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Unit Price (Number only):</label>
-                <input type="number" style={{ width: "100%", padding: "6px" }} placeholder="e.g. 3500" value={newProdUnitPrice} onChange={(e) => setNewProdUnitPrice(e.target.value)} required />
-              </div>
-
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Original Price (Before Disc.):</label>
-                <input type="number" style={{ width: "100%", padding: "6px" }} placeholder="e.g. 4000" value={newProdOriginalPrice} onChange={(e) => setNewProdOriginalPrice(e.target.value)} />
-              </div>
-
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Discount % (Number):</label>
-                <input type="number" style={{ width: "100%", padding: "6px" }} placeholder="e.g. 15" value={newProdDiscount} onChange={(e) => setNewProdDiscount(e.target.value)} />
-              </div>
-
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Price Display Text (Optional):</label>
-                <input type="text" style={{ width: "100%", padding: "6px" }} placeholder="e.g. Rs. 3500 / kg" value={newProdPriceString} onChange={(e) => setNewProdPriceString(e.target.value)} />
-              </div>
-
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Unit (e.g. kg / crate):</label>
-                <input type="text" style={{ width: "100%", padding: "6px" }} placeholder="kg" value={newProdUnit} onChange={(e) => setNewProdUnit(e.target.value)} />
-              </div>
-
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Unit Type:</label>
-                <input type="text" style={{ width: "100%", padding: "6px" }} placeholder="kg" value={newProdUnitType} onChange={(e) => setNewProdUnitType(e.target.value)} />
-              </div>
-
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Initial Stock Count:</label>
-                <input type="number" style={{ width: "100%", padding: "6px" }} placeholder="e.g. 10" value={newProdStock} onChange={(e) => setNewProdStock(e.target.value)} required />
-              </div>
-
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Badge (Optional):</label>
-                <input type="text" style={{ width: "100%", padding: "6px" }} placeholder="e.g. New Launch, Hot" value={newProdBadge} onChange={(e) => setNewProdBadge(e.target.value)} />
-              </div>
-
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Category:</label>
-                <select style={{ width: "100%", padding: "6px" }} value={newProdCategory} onChange={(e) => setNewProdCategory(e.target.value)}>
-                  <option value="dairy">Dairy</option>
-                  <option value="poultry">Poultry</option>
-                  <option value="organic">Organic</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Detail Path (Optional):</label>
-                <input type="text" style={{ width: "100%", padding: "6px" }} placeholder="e.g. /product/ghee" value={newProdDetailPath} onChange={(e) => setNewProdDetailPath(e.target.value)} />
-              </div>
-
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Product Description:</label>
-                <textarea style={{ width: "100%", padding: "6px" }} rows={2} placeholder="Traditional homemade desi ghee prepared using the bilona method..." value={newProdDesc} onChange={(e) => setNewProdDesc(e.target.value)} />
-              </div>
-
-              <div style={{ gridColumn: "1 / -1", textAlign: "right" }}>
-                <Button variant="accent" type="submit">🚀 Save Complete Product</Button>
-              </div>
-            </form>
-          </div>
-
-          <h2>Product Stock Control</h2>
-          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }} border="1" cellPadding="10">
-            <thead>
-              <tr style={{ backgroundColor: "#f5f5f5" }}>
-                <th>Item</th>
-                <th>Current Stock</th>
-                <th>New Stock Value</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map(prod => (
-                <tr key={prod.id}>
-                  <td><span style={{fontSize: '1.3rem'}}>{prod.emoji}</span> {prod.name}</td>
-                  <td style={{ fontWeight: "bold", color: prod.stockCount <= 0 ? "red" : "green" }}>
-                    {prod.stockCount} {prod.unit || 'kg'}
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      placeholder="e.g. 50" 
-                      style={{ padding: "5px", width: "80px" }}
-                      value={stockInputs[prod.id] || ""}
-                      onChange={(e) => setStockInputs({ ...stockInputs, [prod.id]: e.target.value })}
+        <Tabs defaultActiveKey="products" className="mb-4">
+          <Tab eventKey="products" title="Products Management">
+            <Accordion className="mb-4">
+              <Accordion.Item eventKey="0">
+                <Accordion.Header>Add New Product</Accordion.Header>
+                <Accordion.Body>
+                  <Form onSubmit={handleCreateProduct}>
+                    <ProductFormFields
+                      form={createForm}
+                      setForm={setCreateForm}
+                      idPrefix="create"
                     />
-                  </td>
-                  <td>
-                    <Button variant="primary" type="button" onClick={() => handleStockUpdate(prod.id)}>Update</Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                    <div className="text-end mt-3">
+                      <Button type="submit" variant="success" disabled={saving}>
+                        {saving ? "Saving…" : "Create Product"}
+                      </Button>
+                    </div>
+                  </Form>
+                </Accordion.Body>
+              </Accordion.Item>
+            </Accordion>
 
-      {/* --- ORDERS TAB --- */}
-      {activeTab === "orders" && (
-        <div>
-          <h2>Recent Orders Log</h2>
-          {orders.length === 0 ? <p>Abhi tak koi order nahi aya.</p> : (
-            <div style={{ display: "grid", gap: "15px", marginTop: "15px" }}>
-              {orders.map(order => (
-                <div key={order.id} style={{ border: "1px solid #ddd", padding: "15px", borderRadius: "8px", backgroundColor: "#fafafa" }}>
-                  <p><strong>Customer:</strong> {order.name} ({order.phone})</p>
-                  <p><strong>Address:</strong> {order.address}</p>
-                  <p><strong>Date:</strong> {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString() : "Just now"}</p>
-                  <div style={{ backgroundColor: "#fff", padding: "10px", borderRadius: "5px", border: "1px solid #eee", marginTop: "5px" }}>
-                    <strong>Ordered Items:</strong>
-                    <ul>
-                      {order.items?.map((item, idx) => (
-                        <li key={idx}>{item.productName} — {item.quantity} (Subtotal: Rs. {item.subtotal})</li>
-                      ))}
-                    </ul>
-                    <p style={{ margin: "5px 0 0 0", color: "#2e7d32", fontWeight: "bold" }}>Total Bill: Rs. {order.totalBill}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* --- REVIEWS TAB --- */}
-      {activeTab === "feedbacks" && (
-        <div>
-          <h2>Customer Reviews Management</h2>
-          <div style={{ display: "grid", gap: "15px", marginTop: "15px" }}>
-            {feedbacks.map(feed => (
-              <div key={feed.id} style={{ border: "1px solid #ddd", padding: "15px", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: feed.approved ? "#e8f5e9" : "#fffde7" }}>
-                <div>
-                  <p style={{ margin: "0 0 5px 0" }}><strong>{feed.name}</strong> {feed.approved ? "✅ Approved" : "⏳ Pending Approval"}</p>
-                  <p style={{ margin: "0 0 5px 0", color: "#fbc02d" }}>{"⭐".repeat(feed.rating || 5)}</p>
-                  <p style={{ margin: "0", color: "#555" }}>"{feed.comment || feed.review}"</p>
-                </div>
-                <div style={{ display: "flex", gap: "10px" }}>
-                  {!feed.approved && (
-                    <Button variant="accent" type="button" onClick={() => handleApproveFeedback(feed.id)}>Approve</Button>
+            <h2 className="h4 mb-3">All Products</h2>
+            <div className="table-responsive">
+              <Table striped bordered hover responsive className="align-middle">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Unit Price</th>
+                    <th>Stock</th>
+                    <th>Available</th>
+                    <th>Badge</th>
+                    <th>Discount</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center text-muted">
+                        No products yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    products.map((prod) => (
+                      <tr key={prod.id}>
+                        <td>
+                          <span className="me-1">{prod.emoji}</span>
+                          <strong>{prod.name}</strong>
+                          <div className="small text-muted">{prod.price}</div>
+                        </td>
+                        <td>{prod.category || "—"}</td>
+                        <td>Rs. {prod.unitPrice ?? "—"}</td>
+                        <td>
+                          <span
+                            className={
+                              (prod.stockCount ?? 0) <= 0
+                                ? "text-danger fw-bold"
+                                : "text-success fw-bold"
+                            }
+                          >
+                            {prod.stockCount ?? 0} {prod.unit || "kg"}
+                          </span>
+                        </td>
+                        <td>
+                          {prod.available !== false ? (
+                            <Badge bg="success">Yes</Badge>
+                          ) : (
+                            <Badge bg="secondary">No</Badge>
+                          )}
+                        </td>
+                        <td>{prod.badge || "—"}</td>
+                        <td>{prod.discountPercentage ?? 0}%</td>
+                        <td>
+                          <div className="d-flex gap-2 flex-wrap">
+                            <Button
+                              size="sm"
+                              variant="outline-primary"
+                              onClick={() => openEditModal(prod)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline-danger"
+                              onClick={() => handleDeleteProduct(prod)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
                   )}
-                  <button className="btn btn--outline" style={{ borderColor: "red", color: "red" }} onClick={() => handleDeleteFeedback(feed.id)}>Delete</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+                </tbody>
+              </Table>
+            </div>
+          </Tab>
+
+          <Tab eventKey="orders" title="Customer Orders Log">
+            <Alert variant="info" className="d-flex flex-wrap gap-3 justify-content-between">
+              <span>
+                <strong>Total Orders:</strong> {orders.length}
+              </span>
+              <span>
+                <strong>Total Revenue:</strong> Rs. {totalRevenue.toLocaleString()}
+              </span>
+            </Alert>
+
+            <div className="table-responsive">
+              <Table striped bordered hover responsive className="align-middle">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total Bill</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center text-muted">
+                        No orders yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    orders.map((order) => (
+                      <tr key={order.id}>
+                        <td>{order.name || "—"}</td>
+                        <td>{order.phone || "—"}</td>
+                        <td className="small">{order.address || "—"}</td>
+                        <td className="small text-nowrap">
+                          {formatTimestamp(order.createdAt)}
+                        </td>
+                        <td className="small">
+                          {order.items?.length ? (
+                            <ul className="mb-0 ps-3">
+                              {order.items.map((item, idx) => (
+                                <li key={idx}>
+                                  {item.productName} — {item.quantity}
+                                  {item.subtotal != null &&
+                                    ` (Rs. ${item.subtotal})`}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="fw-bold text-success">
+                          Rs. {order.totalBill ?? 0}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </Table>
+            </div>
+          </Tab>
+
+          <Tab eventKey="feedbacks" title="Review Approvals">
+            <Row className="g-3">
+              {feedbacks.length === 0 ? (
+                <Col xs={12}>
+                  <p className="text-muted">No reviews yet.</p>
+                </Col>
+              ) : (
+                feedbacks.map((feed) => (
+                  <Col key={feed.id} xs={12} md={6} lg={4}>
+                    <Card
+                      className={
+                        feed.approved ? "border-success" : "border-warning"
+                      }
+                    >
+                      <Card.Body>
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <Card.Title className="h6 mb-0">
+                            {feed.name || "Anonymous"}
+                          </Card.Title>
+                          {feed.approved ? (
+                            <Badge bg="success">Approved</Badge>
+                          ) : (
+                            <Badge bg="warning" text="dark">
+                              Pending
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-warning mb-2">
+                          {"★".repeat(feed.rating || 0)}
+                          {"☆".repeat(5 - (feed.rating || 0))}
+                        </div>
+                        <Card.Text className="small text-muted">
+                          {feed.review || feed.comment || "No comment."}
+                        </Card.Text>
+                        <div className="d-flex gap-2">
+                          {!feed.approved && (
+                            <Button
+                              size="sm"
+                              variant="success"
+                              onClick={() => handleApproveFeedback(feed.id)}
+                            >
+                              Approve
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline-danger"
+                            onClick={() => handleDeleteFeedback(feed.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))
+              )}
+            </Row>
+          </Tab>
+        </Tabs>
+      </Container>
+
+      <Modal
+        show={showEditModal}
+        onHide={() => setShowEditModal(false)}
+        size="lg"
+        scrollable
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Edit Product{editingProduct ? `: ${editingProduct.name}` : ""}
+          </Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleUpdateProduct}>
+          <Modal.Body>
+            <ProductFormFields
+              form={editForm}
+              setForm={setEditForm}
+              idPrefix="edit"
+            />
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" disabled={saving}>
+              {saving ? "Saving…" : "Save Changes"}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+    </>
   );
-}   
+}

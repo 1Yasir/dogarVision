@@ -12,7 +12,7 @@ export function formatQuantity(item) {
 
 export function buildWhatsAppMessage(items, totalBill, checkout) {
   const lines = [
-    "*🐔 New Order — DogarVision Poultry Farm*",
+    "*🛒 New Order — Dogar Vision*",
     "",
     "*Customer Details*",
     `👤 Name: ${checkout.fullName}`,

@@ -1,368 +1,174 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { addDoc, collection, serverTimestamp, doc, updateDoc, increment, getDoc } from "firebase/firestore";
-import { contactInfo } from "../../data/siteData"; 
+import {
+  Offcanvas,
+  Card,
+  Form,
+  Alert,
+  Button,
+} from "react-bootstrap";
 import { useCart } from "../../context/CartContext";
-import { useLanguage } from "../../context/LanguageContext";
-import { db } from "../../firebase";
-import {
-  formatPrice,
-  formatQuantity,
-  buildWhatsAppMessage,
-} from "../../utils/cartHelpers";
-import {
-  sanitizePhoneInput,
-  isValidPakistaniPhone,
-  PAKISTANI_PHONE_ERROR,
-} from "../../utils/phoneValidation";
-import Button from "../common/Button";
-
-const initialCheckout = {
-  fullName: "",
-  phone: "",
-  address: "",
-};
-
-function CartItemRow({ item, onUpdate, onRemove, t }) {
-  const lineTotal = item.unitPrice * item.quantity;
-  const maxStock = item.stockCount || 1;
-
-  // ✅ Input change handler - direct quantity set karta hai
-  const handleQuantityChange = (e) => {
-    const value = parseInt(e.target.value) || 1;
-    const newQuantity = Math.max(1, Math.min(value, maxStock));
-    
-    // Difference calculate karke updateQuantity ko pass karo
-    const diff = newQuantity - item.quantity;
-    onUpdate(item.productId, diff);
-  };
-
-  return (
-    <div className="cart-item cart-item--drawer">
-      <div className="cart-item__emoji">{item.emoji}</div>
-      <div className="cart-item__info">
-        <h4 className="cart-item__name">{item.name}</h4>
-        <p className="cart-item__unit-price">
-          {item.originalPrice && item.originalPrice > item.unitPrice ? (
-            <>
-              <span style={{ textDecoration: "line-through", color: "#888", marginRight: "8px" }}>
-                {formatPrice(item.originalPrice)}
-              </span>
-              <span style={{ color: "#2e7d32", fontWeight: "bold" }}>
-                {formatPrice(item.unitPrice)}
-              </span>
-            </>
-          ) : (
-            formatPrice(item.unitPrice)
-          )} / {item.unit}
-        </p>
-        <div className="cart-item__qty-row">
-          <div className="cart-item__qty-controls">
-            {/* Minus button */}
-            <button
-              type="button"
-              className="cart-item__qty-btn"
-              onClick={() => onUpdate(item.productId, -1)}
-              disabled={item.quantity <= 1}
-              aria-label={`${t("cart.decrease")} ${item.name}`}
-            >
-              −
-            </button>
-            
-            {/* Quantity Input with proper min/max */}
-            <input
-              type="number"
-              className="cart-item__qty-input"
-              value={item.quantity}
-              onChange={handleQuantityChange}
-              min="1"
-              max={maxStock}
-              aria-label={`${t("cart.quantity")} ${item.name}`}
-            />
-            
-            {/* Plus button */}
-            <button
-              type="button"
-              className="cart-item__qty-btn"
-              onClick={() => onUpdate(item.productId, 1)}
-              disabled={item.quantity >= maxStock}
-              aria-label={`${t("cart.increase")} ${item.name}`}
-            >
-              +
-            </button>
-          </div>
-          <span className="cart-item__line-total">{formatPrice(lineTotal)}</span>
-        </div>
-      </div>
-      
-      {/* Remove button */}
-      <button
-        type="button"
-        className="cart-item__remove"
-        onClick={() => onRemove(item.productId)}
-        aria-label={`${t("cart.remove")} ${item.name}`}
-      >
-        ✕
-      </button>
-    </div>
-  );
-}
+import { cartCopy } from "../../data/copy.js";
+import { formatPrice } from "../../utils/cartHelpers";
+import CartItemRow from "./CartItemRow";
+import { useCartCheckout } from "./useCartCheckout";
 
 export default function CartDrawer() {
-  const { 
-    items, 
-    updateQuantity, 
-    removeFromCart, 
+  const {
+    items,
+    updateQuantity,
+    setItemQuantity,
+    removeFromCart,
     clearCart,
+    totalBill,
     isCartOpen,
     closeCart,
-    totalBill 
   } = useCart();
-  const { t } = useLanguage();
-  const [checkout, setCheckout] = useState(initialCheckout);
-  const [submitting, setSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    if (isCartOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isCartOpen]);
+  const {
+    checkout,
+    handleChange,
+    phoneInvalid,
+    canPlaceOrder,
+    submitting,
+    errorMessage,
+    handlePlaceOrder,
+    phoneError,
+    idPrefix,
+  } = useCartCheckout({ onOrderSuccess: closeCart, idPrefix: "drawer" });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setCheckout({
-      ...checkout,
-      [name]: name === "phone" ? sanitizePhoneInput(value) : value,
-    });
-    setErrorMessage("");
-  };
-
-  const phoneInvalid =
-    checkout.phone.length > 0 && !isValidPakistaniPhone(checkout.phone);
-  const canPlaceOrder =
-    checkout.fullName.trim() &&
-    checkout.address.trim() &&
-    isValidPakistaniPhone(checkout.phone) &&
-    !submitting;
-
-  const handlePlaceOrder = async (e) => {
-    e.preventDefault();
-    if (items.length === 0 || !canPlaceOrder) return;
-
-    setSubmitting(true);
-    setErrorMessage("");
-
-    try {
-      // ✅ STEP 1: Real-time stock validation - sab items check karo
-      for (const item of items) {
-        const productRef = doc(db, "products", item.productId);
-        const freshSnap = await getDoc(productRef);
-        
-        if (freshSnap.exists()) {
-          const currentStock = Number(freshSnap.data().stockCount) || 0;
-          
-          // Agar stock kam hai to order cancel karo
-          if (currentStock < item.quantity) {
-            setErrorMessage(
-              `❌ ${item.name} ka stock khatam ho gaya! Available: ${currentStock} items. Order update karein.`
-            );
-            setSubmitting(false);
-            return;
-          }
-        }
-      }
-
-      const processedItems = items.map((item) => ({
-        productName: item.name,
-        quantity: formatQuantity(item),
-        subtotal: item.unitPrice * item.quantity,
-      }));
-
-      // ✅ STEP 2: Order ko database mein save karo
-      await addDoc(collection(db, "orders"), {
-        name: checkout.fullName.trim(),
-        phone: checkout.phone.trim(),
-        address: checkout.address.trim(),
-        items: processedItems,
-        totalBill: totalBill, 
-        createdAt: serverTimestamp(),
-      });
-
-      // ✅ STEP 3: Stock ko minus karo - ek ek kar ke safely
-      const stockUpdates = items.map((item) => {
-        const productRef = doc(db, "products", item.productId);
-        const orderQty = Number(item.quantity) || 1;
-        
-        return updateDoc(productRef, {
-          stockCount: increment(-orderQty)
-        });
-      });
-      
-      await Promise.all(stockUpdates);
-
-      // ✅ STEP 4: WhatsApp message bheejo
-      const message = buildWhatsAppMessage(items, totalBill, checkout);
-      const number = contactInfo.whatsapp.replace(/\D/g, "");
-      const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
-      
-      window.open(url, "_blank", "noopener,noreferrer");
-
-      // ✅ STEP 5: Cart clear karo
-      alert("✅ Shukriya! Aap ka order kamyabi se save ho gaya hai.");
-
-      setCheckout(initialCheckout);
-      clearCart();
-      closeCart();
-
-    } catch (error) {
-      console.error("Order error:", error);
-      setErrorMessage("❌ Order save nahi ho saka. Dubara koshish karein.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (!isCartOpen) return null;
-
-  const itemLabel = items.length === 1 ? t("cart.item") : t("cart.items");
+  const itemLabel = items.length === 1 ? cartCopy.item : cartCopy.items;
 
   return (
-    <div className="cart-drawer">
-        <div className="cart-drawer__header">
-          <h2 className="cart-drawer__title">{t("cart.title")}</h2>
-          <button type="button" className="cart-drawer__close" onClick={closeCart}>✕</button>
-        </div>
+    <Offcanvas show={isCartOpen} onHide={closeCart} placement="end" scroll={false}>
+      <Offcanvas.Header closeButton>
+        <Offcanvas.Title>{cartCopy.title}</Offcanvas.Title>
+      </Offcanvas.Header>
 
-        <div className="cart-drawer__content">
-          {items.length === 0 ? (
-            <div className="cart-empty">
-              <span className="cart-empty__icon">🛒</span>
-              <p className="cart-empty__title">{t("cart.emptyTitle")}</p>
-              <p className="cart-empty__desc">{t("cart.emptyDesc")}</p>
-              <Link to={{ pathname: "/", hash: "#products" }} className="btn btn--primary btn--sm" onClick={closeCart}>
-                {t("cart.shopProducts")}
-              </Link>
-            </div>
-          ) : (
-            <>
-              <div className="cart-items">
-                {items.map((item) => (
-                  <CartItemRow key={item.productId} item={item} onUpdate={updateQuantity} onRemove={removeFromCart} t={t} />
-                ))}
-              </div>
-              
-              <div className="cart-bill">
-                <div className="cart-bill__row">
-                  <span>{t("cart.subtotal")} ({items.length} {itemLabel})</span>
+      <Offcanvas.Body>
+        {items.length === 0 ? (
+          <div className="text-center py-4">
+            <div className="fs-1 mb-3" aria-hidden="true">🛒</div>
+            <h3 className="h5">{cartCopy.emptyTitle}</h3>
+            <p className="text-muted mb-4">{cartCopy.emptyDesc}</p>
+            <Button
+              as={Link}
+              to={{ pathname: "/", hash: "#products" }}
+              variant="primary"
+              size="sm"
+              onClick={closeCart}
+            >
+              {cartCopy.shopProducts}
+            </Button>
+          </div>
+        ) : (
+          <>
+            {items.map((item) => (
+              <CartItemRow
+                key={item.productId}
+                item={item}
+                onUpdate={(delta) => updateQuantity(item.productId, delta)}
+                onSetQuantity={(value) => setItemQuantity(item.productId, value)}
+                onRemove={() => removeFromCart(item.productId)}
+              />
+            ))}
+
+            <Card className="mb-3">
+              <Card.Body>
+                <div className="d-flex justify-content-between mb-2">
+                  <span>
+                    {cartCopy.subtotal} ({items.length} {itemLabel})
+                  </span>
                   <span>{formatPrice(totalBill)}</span>
                 </div>
-                <div className="cart-bill__row cart-bill__row--delivery">
-                  <span>{t("cart.delivery")}</span>
-                  <span className="cart-bill__free">{t("cart.deliveryPending")}</span>
+                <div className="d-flex justify-content-between mb-2 text-muted">
+                  <span>{cartCopy.delivery}</span>
+                  <span>{cartCopy.deliveryPending}</span>
                 </div>
-                <div className="cart-bill__total">
-                  <span>{t("cart.totalBill")}</span>
-                  <span className="cart-bill__total-amount">{formatPrice(totalBill)}</span>
+                <div className="d-flex justify-content-between fw-bold border-top pt-2 mt-2">
+                  <span>{cartCopy.totalBill}</span>
+                  <span className="text-success">{formatPrice(totalBill)}</span>
                 </div>
-              </div>
+              </Card.Body>
+            </Card>
 
-              <form className="cart-checkout" onSubmit={handlePlaceOrder}>
-                <h3 className="cart-checkout__title">{t("cart.checkoutTitle")}</h3>
+            <Card>
+              <Card.Body>
+                <Card.Title as="h3" className="h6 mb-3">{cartCopy.checkoutTitle}</Card.Title>
 
                 {errorMessage && (
-                  <div className="form-error" style={{ marginBottom: "16px", padding: "12px", backgroundColor: "#ffebee", borderRadius: "4px", color: "#c62828" }}>
-                    {errorMessage}
-                  </div>
+                  <Alert variant="danger" className="mb-3">{errorMessage}</Alert>
                 )}
 
-                <div className="form-group">
-                  <label className="form-label" htmlFor="drawer-cart-name">{t("cart.fullName")}</label>
-                  <input 
-                    className="form-input" 
-                    id="drawer-cart-name" 
-                    name="fullName" 
-                    type="text" 
-                    required 
-                    placeholder={t("cart.fullNamePlaceholder")}
-                    value={checkout.fullName} 
-                    onChange={handleChange} 
-                    disabled={submitting} 
-                  />
-                </div>
+                <Form onSubmit={handlePlaceOrder}>
+                  <Form.Group className="mb-3" controlId={`${idPrefix}-name`}>
+                    <Form.Label>{cartCopy.fullName}</Form.Label>
+                    <Form.Control
+                      name="fullName"
+                      type="text"
+                      required
+                      placeholder={cartCopy.fullNamePlaceholder}
+                      value={checkout.fullName}
+                      onChange={handleChange}
+                      disabled={submitting}
+                    />
+                  </Form.Group>
 
-                <div className="form-group">
-                  <label className="form-label" htmlFor="drawer-cart-phone">{t("cart.phone")}</label>
-                  <input 
-                    className={`form-input${phoneInvalid ? " form-input--error" : ""}`} 
-                    id="drawer-cart-phone" 
-                    name="phone" 
-                    type="tel" 
-                    required 
-                    placeholder={t("cart.phonePlaceholder")}
-                    value={checkout.phone} 
-                    onChange={handleChange} 
-                    disabled={submitting}
-                    inputMode="tel"
-                    autoComplete="tel"
-                  />
-                  {phoneInvalid && <p className="form-error">{PAKISTANI_PHONE_ERROR}</p>}
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="drawer-cart-address">{t("cart.address")}</label>
-                  <textarea 
-                    className="form-textarea" 
-                    id="drawer-cart-address" 
-                    name="address" 
-                    required 
-                    rows={3} 
-                    placeholder={t("cart.addressPlaceholder")}
-                    value={checkout.address} 
-                    onChange={handleChange} 
-                    disabled={submitting} 
-                  />
-                </div>
-
-                <div className="cart-checkout__actions">
-                  <Button 
-                    type="submit" 
-                    variant="accent" 
-                    className="cart-checkout__submit" 
-                    disabled={!canPlaceOrder}
-                  >
-                    {submitting ? (
-                      <>
-                        <span className="cart-checkout__spinner" aria-hidden="true" />
-                        {t("cart.saving")}
-                      </>
-                    ) : (
-                      <>
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                        </svg>
-                        {t("cart.placeOrder")}
-                      </>
+                  <Form.Group className="mb-3" controlId={`${idPrefix}-phone`}>
+                    <Form.Label>{cartCopy.phone}</Form.Label>
+                    <Form.Control
+                      name="phone"
+                      type="tel"
+                      required
+                      placeholder={cartCopy.phonePlaceholder}
+                      value={checkout.phone}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      inputMode="tel"
+                      autoComplete="tel"
+                      isInvalid={phoneInvalid}
+                    />
+                    {phoneInvalid && (
+                      <Form.Control.Feedback type="invalid">{phoneError}</Form.Control.Feedback>
                     )}
-                  </Button>
-                  <button 
-                    type="button" 
-                    className="cart-checkout__clear" 
-                    onClick={clearCart} 
-                    disabled={submitting}
-                  >
-                    {t("cart.clearCart")}
-                  </button>
-                </div>
-              </form>
-            </>
-          )}
-        </div>
-      </div>
+                  </Form.Group>
+
+                  <Form.Group className="mb-3" controlId={`${idPrefix}-address`}>
+                    <Form.Label>{cartCopy.address}</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      name="address"
+                      required
+                      rows={3}
+                      placeholder={cartCopy.addressPlaceholder}
+                      value={checkout.address}
+                      onChange={handleChange}
+                      disabled={submitting}
+                    />
+                  </Form.Group>
+
+                  <div className="d-grid gap-2">
+                    <Button
+                      type="submit"
+                      variant="success"
+                      disabled={!canPlaceOrder}
+                    >
+                      {submitting ? cartCopy.saving : cartCopy.placeOrder}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline-secondary"
+                      onClick={clearCart}
+                      disabled={submitting}
+                    >
+                      {cartCopy.clearCart}
+                    </Button>
+                  </div>
+                </Form>
+              </Card.Body>
+            </Card>
+          </>
+        )}
+      </Offcanvas.Body>
+    </Offcanvas>
   );
 }
