@@ -24,10 +24,12 @@ export default function ProductCard({
   discountPercentage = 0,
   stockCount = 0,
   detailPath,
+  imageUrl, // ◄ 1. Node script se jo naya field aya wo yahan receive kiya
 }) {
   const { addToCart, openCart } = useCart();
   const { showToast } = useToast();
   const [addedFeedback, setAddedFeedback] = useState(false);
+  const [imageError, setImageError] = useState(false); // ◄ 2. Image error state track karne ke liye
 
   const stock = Math.max(0, Number(stockCount) || 0);
   const isAvailable = available && stock > 0;
@@ -65,6 +67,7 @@ export default function ProductCard({
         unitType,
         stockCount: stock,
         discountPercentage,
+        imageUrl, // ◄ Cart me bhi image pass kar di taake wahan bhi dikhe
       },
       value
     );
@@ -80,17 +83,36 @@ export default function ProductCard({
     }
   };
 
-  /* ── Image Block ── */
+  /* ── 3. Image Block Modified ── */
   const imageBlock = (
-    <div className="product-card__image">
+    <div className="product-card__image" style={{ position: "relative", overflow: "hidden" }}>
       <span
         className={`product-card__badge${!isAvailable ? " product-card__badge--unavailable" : ""}`}
       >
         {badgeText}
       </span>
-      <span className="product-card__emoji" aria-hidden="true">
-        {emoji}
-      </span>
+
+      {/* Agar database me imageUrl hai aur image load hone me koi error nahi aya */}
+      {imageUrl && !imageError ? (
+        <img
+          src={imageUrl}
+          alt={name}
+          className="product-card__img"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            padding: "10px",
+          }}
+          onError={() => setImageError(true)} // ◄ Agar folder me file na ho, to auto emoji par shift ho jaye
+        />
+      ) : (
+        /* Fallback: Agar picture missing hai ya load nahi hui, to purana emoji dikhaye */
+        <span className="product-card__emoji" aria-hidden="true">
+          {emoji}
+        </span>
+      )}
+
       {imageLabel && (
         <span className="product-card__image-label">{imageLabel}</span>
       )}

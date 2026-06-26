@@ -75,9 +75,10 @@ html.dark {
   right: 0;
   z-index: 100;
   height: 72px;
-  display: flex;
-  align-items: center;
+  /* display: flex; */
+  /* align-items: center; */
   transition: all 0.3s ease;
+padding: 17px 0;
 }
 
 .nav--scrolled {
@@ -1079,13 +1080,12 @@ html.dark .product-card__badge--unavailable {
   z-index: 1;
   margin-bottom: 20px;
 }
-
-.cart-page__panel {
+.cart-container{
   background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 20px;
-  padding: 32px;
-  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
   max-width: 720px;
 }
 
@@ -2552,7 +2552,7 @@ html.dark .feedback {
   width: 100%;
   max-width: 420px;
   background: var(--surface);
-  z-index: 100;
+  z-index: 250;
   box-shadow: -8px 0 32px rgba(15, 23, 42, 0.15);
   display: flex;
   flex-direction: column;

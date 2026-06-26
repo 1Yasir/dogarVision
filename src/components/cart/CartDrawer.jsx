@@ -43,7 +43,7 @@ export default function CartDrawer() {
       />
 
       {/* Drawer */}
-      <div className="cart-drawer" role="dialog" aria-modal="true" aria-label={cartCopy.title}>
+      <div className="cart-drawer" role="dialog" aria-modal="true" aria-label={cartCopy.title} onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
         <div className="cart-drawer__header">

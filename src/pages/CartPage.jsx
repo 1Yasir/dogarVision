@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import Container from "react-bootstrap/Container";
 import NavBar from "../components/layout/NavBar";
 import Footer from "../components/layout/Footer";
 import WhatsAppFloat from "../components/common/WhatsAppFloat";
@@ -14,7 +15,7 @@ export default function CartPage() {
   }, []);
 
   return (
-    <div className="poultry">
+    <div className="bg-body min-vh-100 d-flex flex-column">
       <SeoHelmet
         title={seoCopy.cart.title}
         description={seoCopy.cart.description}
@@ -22,8 +23,8 @@ export default function CartPage() {
       />
       <NavBar />
 
-      <main className="cart-page__main">
-        <div className="container">
+      <main className="py-4">
+        <Container>
           <Breadcrumbs
             items={[
               { label: cartCopy.breadcrumbHome, to: "/" },
@@ -37,10 +38,10 @@ export default function CartPage() {
             desc={cartCopy.desc}
           />
 
-          <div style={{ marginTop: "24px" }}>
+          <div className="mt-4">
             <CartContent />
           </div>
-        </div>
+        </Container>
       </main>
 
       <Footer />

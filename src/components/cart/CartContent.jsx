@@ -48,7 +48,7 @@ export default function CartContent() {
   const itemLabel = items.length === 1 ? cartCopy.item : cartCopy.items;
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
+    <div className="cart-container">
 
       {/* Left Col — Items + Bill */}
       <div>

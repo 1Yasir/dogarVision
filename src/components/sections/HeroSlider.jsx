@@ -5,6 +5,22 @@ import { useCart } from "../../context/CartContext";
 import { db } from "../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 
+// 1. Component ke bahar ek Default Fallback Slide data bana lein
+const DEFAULT_SLIDE = {
+  id: "default-fallback",
+  slideType: "poultry",
+  emoji: "🐔",
+  badge: "Premium Quality",
+  title: "Fresh & Organic",
+  highlight: "Farm Products",
+  subtitle: "High-quality organic farm-fresh products delivered straight to your doorstep.",
+  product: {
+    available: false, // Order button click handle karne ke liye safety check
+    stockCount: 0,
+    discountPercentage: 0
+  }
+};
+
 export default function HeroSlider() {
   const [dbProducts, setDbProducts] = useState([]);
   const [current, setCurrent] = useState(0);
@@ -30,7 +46,8 @@ export default function HeroSlider() {
     return () => unsubscribe();
   }, []);
 
-  const slides = useMemo(() => {
+  // Real-time products filter karne ka logic
+  const liveSlides = useMemo(() => {
     return heroSlideGroups
       .map((group) => {
         const availableProduct = dbProducts.find(
@@ -54,6 +71,9 @@ export default function HeroSlider() {
       .filter(Boolean);
   }, [dbProducts]);
 
+  // 2. Agar liveSlides khali hain (loading ya stock 0), to DEFAULT_SLIDE array use karein
+  const slides = liveSlides.length > 0 ? liveSlides : [DEFAULT_SLIDE];
+
   const goTo = useCallback(
     (index, isInstant = false) => {
       if (slides.length === 0) return;
@@ -72,22 +92,15 @@ export default function HeroSlider() {
 
   const handleOrderNow = (slide) => {
     const product = slide.product;
-    if (!product?.available || (Number(product.stockCount) || 0) <= 0) return;
-    const quantity =
-      product.unitType === "kg" ? (product.kgOptions?.[0] ?? 0.5) : 1;
+    // Agar fallback slide hai jisme real product nahi hai, to function yahin ruk jaye
+    if (!product?.id || !product?.available || (Number(product.stockCount) || 0) <= 0) return;
+    
+    const quantity = product.unitType === "kg" ? (product.kgOptions?.[0] ?? 0.5) : 1;
     addToCart(product, quantity);
     openCart();
   };
 
-  if (slides.length === 0) {
-    return (
-      <section id="home" className="hero-slider">
-        <div className="container" style={{ paddingTop: "40px", textAlign: "center" }}>
-          <p style={{ color: "var(--text-muted)" }}>{heroCopy.loading}</p>
-        </div>
-      </section>
-    );
-  }
+  // 3. HUMNE PURANA "LOADING FRESH PRODUCT" WALA IF-STATEMENT HATA DIYA HAI
 
   const activeSlide = slides[current];
   const isAchar = activeSlide?.slideType === "achar";
@@ -134,12 +147,15 @@ export default function HeroSlider() {
 
                       <p className="hero-slider__subtitle">{slide.subtitle}</p>
 
-                      <button
-                        className="btn btn--primary"
-                        onClick={() => handleOrderNow(slide)}
-                      >
-                        {heroCopy.orderNow}
-                      </button>
+                      {/* Agar default fallback slide ho, to Order Now button hide kar sakte hain ya disabled */}
+                      {slide.id !== "default-fallback" && (
+                        <button
+                          className="btn btn--primary"
+                          onClick={() => handleOrderNow(slide)}
+                        >
+                          {heroCopy.orderNow}
+                        </button>
+                      )}
                     </div>
 
                     {/* Right: Visual */}
