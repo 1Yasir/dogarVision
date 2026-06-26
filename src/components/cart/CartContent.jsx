@@ -1,12 +1,4 @@
 import { Link } from "react-router-dom";
-import {
-  Row,
-  Col,
-  Card,
-  Form,
-  Alert,
-  Button,
-} from "react-bootstrap";
 import { useCart } from "../../context/CartContext";
 import { cartCopy } from "../../data/copy.js";
 import { formatPrice } from "../../utils/cartHelpers";
@@ -37,25 +29,30 @@ export default function CartContent() {
 
   if (items.length === 0) {
     return (
-      <Card className="text-center py-5">
-        <Card.Body>
-          <div className="fs-1 mb-3" aria-hidden="true">🛒</div>
-          <h3 className="h5">{cartCopy.emptyTitle}</h3>
-          <p className="text-muted mb-4">{cartCopy.emptyDesc}</p>
-          <Button as={Link} to={{ pathname: "/", hash: "#products" }} variant="primary" size="sm">
+      <div className="cart-page__panel">
+        <div className="cart-empty">
+          <span className="cart-empty__icon" aria-hidden="true">🛒</span>
+          <h3 className="cart-empty__title">{cartCopy.emptyTitle}</h3>
+          <p className="cart-empty__desc">{cartCopy.emptyDesc}</p>
+          <Link
+            to={{ pathname: "/", hash: "#products" }}
+            className="btn btn--primary btn--sm"
+          >
             {cartCopy.shopProducts}
-          </Button>
-        </Card.Body>
-      </Card>
+          </Link>
+        </div>
+      </div>
     );
   }
 
   const itemLabel = items.length === 1 ? cartCopy.item : cartCopy.items;
 
   return (
-    <Row className="g-4">
-      <Col lg={7}>
-        <div className="mb-3">
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
+
+      {/* Left Col — Items + Bill */}
+      <div>
+        <div className="cart-items">
           {items.map((item) => (
             <CartItemRow
               key={item.productId}
@@ -67,104 +64,110 @@ export default function CartContent() {
           ))}
         </div>
 
-        <Card>
-          <Card.Body>
-            <div className="d-flex justify-content-between mb-2">
-              <span>
-                {cartCopy.subtotal} ({items.length} {itemLabel})
-              </span>
-              <span>{formatPrice(totalBill)}</span>
-            </div>
-            <div className="d-flex justify-content-between mb-2 text-muted">
-              <span>{cartCopy.delivery}</span>
-              <span>{cartCopy.deliveryPending}</span>
-            </div>
-            <div className="d-flex justify-content-between fw-bold fs-5 border-top pt-2 mt-2">
-              <span>{cartCopy.totalBill}</span>
-              <span className="text-success">{formatPrice(totalBill)}</span>
-            </div>
-          </Card.Body>
-        </Card>
-      </Col>
+        {/* Bill Summary */}
+        <div className="cart-bill">
+          <div className="cart-bill__row">
+            <span>{cartCopy.subtotal} ({items.length} {itemLabel})</span>
+            <span>{formatPrice(totalBill)}</span>
+          </div>
+          <div className="cart-bill__row cart-bill__row--delivery">
+            <span>{cartCopy.delivery}</span>
+            <span className="cart-bill__free">{cartCopy.deliveryPending}</span>
+          </div>
+          <div className="cart-bill__total">
+            <span>{cartCopy.totalBill}</span>
+            <span className="cart-bill__total-amount">{formatPrice(totalBill)}</span>
+          </div>
+        </div>
+      </div>
 
-      <Col lg={5}>
-        <Card>
-          <Card.Body>
-            <Card.Title as="h3" className="h5 mb-3">{cartCopy.checkoutTitle}</Card.Title>
+      {/* Right Col — Checkout Form */}
+      <div className="cart-page__panel">
+        <h3 className="cart-checkout__title">{cartCopy.checkoutTitle}</h3>
 
-            {errorMessage && (
-              <Alert variant="danger" className="mb-3">{errorMessage}</Alert>
+        {errorMessage && (
+          <div className="form-error" style={{ marginBottom: "16px" }}>
+            {errorMessage}
+          </div>
+        )}
+
+        <form onSubmit={handlePlaceOrder}>
+          <div className="form-group">
+            <label className="form-label" htmlFor={`${idPrefix}-name`}>
+              {cartCopy.fullName}
+            </label>
+            <input
+              id={`${idPrefix}-name`}
+              name="fullName"
+              type="text"
+              className="form-input"
+              required
+              placeholder={cartCopy.fullNamePlaceholder}
+              value={checkout.fullName}
+              onChange={handleChange}
+              disabled={submitting}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor={`${idPrefix}-phone`}>
+              {cartCopy.phone}
+            </label>
+            <input
+              id={`${idPrefix}-phone`}
+              name="phone"
+              type="tel"
+              className={`form-input${phoneInvalid ? " form-input--error" : ""}`}
+              required
+              placeholder={cartCopy.phonePlaceholder}
+              value={checkout.phone}
+              onChange={handleChange}
+              disabled={submitting}
+              inputMode="tel"
+              autoComplete="tel"
+            />
+            {phoneInvalid && (
+              <div className="form-error">{phoneError}</div>
             )}
+          </div>
 
-            <Form onSubmit={handlePlaceOrder}>
-              <Form.Group className="mb-3" controlId={`${idPrefix}-name`}>
-                <Form.Label>{cartCopy.fullName}</Form.Label>
-                <Form.Control
-                  name="fullName"
-                  type="text"
-                  required
-                  placeholder={cartCopy.fullNamePlaceholder}
-                  value={checkout.fullName}
-                  onChange={handleChange}
-                  disabled={submitting}
-                />
-              </Form.Group>
+          <div className="form-group">
+            <label className="form-label" htmlFor={`${idPrefix}-address`}>
+              {cartCopy.address}
+            </label>
+            <textarea
+              id={`${idPrefix}-address`}
+              name="address"
+              className="form-textarea"
+              required
+              rows={3}
+              placeholder={cartCopy.addressPlaceholder}
+              value={checkout.address}
+              onChange={handleChange}
+              disabled={submitting}
+            />
+          </div>
 
-              <Form.Group className="mb-3" controlId={`${idPrefix}-phone`}>
-                <Form.Label>{cartCopy.phone}</Form.Label>
-                <Form.Control
-                  name="phone"
-                  type="tel"
-                  required
-                  placeholder={cartCopy.phonePlaceholder}
-                  value={checkout.phone}
-                  onChange={handleChange}
-                  disabled={submitting}
-                  inputMode="tel"
-                  autoComplete="tel"
-                  isInvalid={phoneInvalid}
-                />
-                {phoneInvalid && (
-                  <Form.Control.Feedback type="invalid">{phoneError}</Form.Control.Feedback>
-                )}
-              </Form.Group>
+          <div className="cart-checkout__actions">
+            <button
+              type="submit"
+              className="btn btn--primary cart-checkout__submit"
+              disabled={!canPlaceOrder}
+            >
+              {submitting ? cartCopy.saving : cartCopy.placeOrder}
+            </button>
+            <button
+              type="button"
+              className="cart-checkout__clear"
+              onClick={clearCart}
+              disabled={submitting}
+            >
+              {cartCopy.clearCart}
+            </button>
+          </div>
+        </form>
+      </div>
 
-              <Form.Group className="mb-3" controlId={`${idPrefix}-address`}>
-                <Form.Label>{cartCopy.address}</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  name="address"
-                  required
-                  rows={3}
-                  placeholder={cartCopy.addressPlaceholder}
-                  value={checkout.address}
-                  onChange={handleChange}
-                  disabled={submitting}
-                />
-              </Form.Group>
-
-              <div className="d-grid gap-2">
-                <Button
-                  type="submit"
-                  variant="success"
-                  size="lg"
-                  disabled={!canPlaceOrder}
-                >
-                  {submitting ? cartCopy.saving : cartCopy.placeOrder}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline-secondary"
-                  onClick={clearCart}
-                  disabled={submitting}
-                >
-                  {cartCopy.clearCart}
-                </Button>
-              </div>
-            </Form>
-          </Card.Body>
-        </Card>
-      </Col>
-    </Row>
+    </div>
   );
 }

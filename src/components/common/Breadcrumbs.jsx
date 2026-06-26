@@ -1,23 +1,29 @@
 import { Link } from "react-router-dom";
-import { Breadcrumb } from "react-bootstrap";
 
 export default function Breadcrumbs({ items }) {
   return (
-    <Breadcrumb className="mb-3">
-      {items.map((item, index) => {
-        const isLast = index === items.length - 1;
+    <nav className="breadcrumbs">
+      <ol className="breadcrumbs__list">
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1;
 
-        return (
-          <Breadcrumb.Item
-            key={item.label}
-            active={isLast}
-            linkAs={isLast ? undefined : Link}
-            linkProps={isLast ? undefined : { to: item.to }}
-          >
-            {item.label}
-          </Breadcrumb.Item>
-        );
-      })}
-    </Breadcrumb>
+          return (
+            <li key={item.label} className="breadcrumbs__item">
+              {!isLast && (
+                <>
+                  <Link to={item.to} className="breadcrumbs__link">
+                    {item.label}
+                  </Link>
+                  <span className="breadcrumbs__sep" aria-hidden="true">›</span>
+                </>
+              )}
+              {isLast && (
+                <span className="breadcrumbs__current">{item.label}</span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }

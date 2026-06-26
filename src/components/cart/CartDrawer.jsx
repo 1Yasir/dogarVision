@@ -1,11 +1,4 @@
 import { Link } from "react-router-dom";
-import {
-  Offcanvas,
-  Card,
-  Form,
-  Alert,
-  Button,
-} from "react-bootstrap";
 import { useCart } from "../../context/CartContext";
 import { cartCopy } from "../../data/copy.js";
 import { formatPrice } from "../../utils/cartHelpers";
@@ -38,86 +31,116 @@ export default function CartDrawer() {
 
   const itemLabel = items.length === 1 ? cartCopy.item : cartCopy.items;
 
+  if (!isCartOpen) return null;
+
   return (
-    <Offcanvas show={isCartOpen} onHide={closeCart} placement="end" scroll={false}>
-      <Offcanvas.Header closeButton>
-        <Offcanvas.Title>{cartCopy.title}</Offcanvas.Title>
-      </Offcanvas.Header>
+    <>
+      {/* Backdrop */}
+      <div
+        className="admin-modal-backdrop"
+        onClick={closeCart}
+        aria-hidden="true"
+      />
 
-      <Offcanvas.Body>
-        {items.length === 0 ? (
-          <div className="text-center py-4">
-            <div className="fs-1 mb-3" aria-hidden="true">🛒</div>
-            <h3 className="h5">{cartCopy.emptyTitle}</h3>
-            <p className="text-muted mb-4">{cartCopy.emptyDesc}</p>
-            <Button
-              as={Link}
-              to={{ pathname: "/", hash: "#products" }}
-              variant="primary"
-              size="sm"
-              onClick={closeCart}
-            >
-              {cartCopy.shopProducts}
-            </Button>
-          </div>
-        ) : (
-          <>
-            {items.map((item) => (
-              <CartItemRow
-                key={item.productId}
-                item={item}
-                onUpdate={(delta) => updateQuantity(item.productId, delta)}
-                onSetQuantity={(value) => setItemQuantity(item.productId, value)}
-                onRemove={() => removeFromCart(item.productId)}
-              />
-            ))}
+      {/* Drawer */}
+      <div className="cart-drawer" role="dialog" aria-modal="true" aria-label={cartCopy.title}>
 
-            <Card className="mb-3">
-              <Card.Body>
-                <div className="d-flex justify-content-between mb-2">
-                  <span>
-                    {cartCopy.subtotal} ({items.length} {itemLabel})
-                  </span>
+        {/* Header */}
+        <div className="cart-drawer__header">
+          <h2 className="cart-drawer__title">{cartCopy.title}</h2>
+          <button
+            type="button"
+            className="cart-drawer__close"
+            onClick={closeCart}
+            aria-label="Close cart"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="cart-drawer__content">
+          {items.length === 0 ? (
+            <div className="cart-empty">
+              <span className="cart-empty__icon" aria-hidden="true">🛒</span>
+              <h3 className="cart-empty__title">{cartCopy.emptyTitle}</h3>
+              <p className="cart-empty__desc">{cartCopy.emptyDesc}</p>
+              <Link
+                to={{ pathname: "/", hash: "#products" }}
+                className="btn btn--primary btn--sm"
+                onClick={closeCart}
+              >
+                {cartCopy.shopProducts}
+              </Link>
+            </div>
+          ) : (
+            <>
+              {/* Cart Items */}
+              <div className="cart-items">
+                {items.map((item) => (
+                  <CartItemRow
+                    key={item.productId}
+                    item={item}
+                    onUpdate={(delta) => updateQuantity(item.productId, delta)}
+                    onSetQuantity={(value) => setItemQuantity(item.productId, value)}
+                    onRemove={() => removeFromCart(item.productId)}
+                  />
+                ))}
+              </div>
+
+              {/* Bill Summary */}
+              <div className="cart-bill">
+                <div className="cart-bill__row">
+                  <span>{cartCopy.subtotal} ({items.length} {itemLabel})</span>
                   <span>{formatPrice(totalBill)}</span>
                 </div>
-                <div className="d-flex justify-content-between mb-2 text-muted">
+                <div className="cart-bill__row cart-bill__row--delivery">
                   <span>{cartCopy.delivery}</span>
-                  <span>{cartCopy.deliveryPending}</span>
+                  <span className="cart-bill__free">{cartCopy.deliveryPending}</span>
                 </div>
-                <div className="d-flex justify-content-between fw-bold border-top pt-2 mt-2">
+                <div className="cart-bill__total">
                   <span>{cartCopy.totalBill}</span>
-                  <span className="text-success">{formatPrice(totalBill)}</span>
+                  <span className="cart-bill__total-amount">{formatPrice(totalBill)}</span>
                 </div>
-              </Card.Body>
-            </Card>
+              </div>
 
-            <Card>
-              <Card.Body>
-                <Card.Title as="h3" className="h6 mb-3">{cartCopy.checkoutTitle}</Card.Title>
+              {/* Checkout Form */}
+              <div className="cart-checkout">
+                <h3 className="cart-checkout__title">{cartCopy.checkoutTitle}</h3>
 
                 {errorMessage && (
-                  <Alert variant="danger" className="mb-3">{errorMessage}</Alert>
+                  <div className="form-error" style={{ marginBottom: "16px" }}>
+                    {errorMessage}
+                  </div>
                 )}
 
-                <Form onSubmit={handlePlaceOrder}>
-                  <Form.Group className="mb-3" controlId={`${idPrefix}-name`}>
-                    <Form.Label>{cartCopy.fullName}</Form.Label>
-                    <Form.Control
+                <form onSubmit={handlePlaceOrder}>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor={`${idPrefix}-name`}>
+                      {cartCopy.fullName}
+                    </label>
+                    <input
+                      id={`${idPrefix}-name`}
                       name="fullName"
                       type="text"
+                      className="form-input"
                       required
                       placeholder={cartCopy.fullNamePlaceholder}
                       value={checkout.fullName}
                       onChange={handleChange}
                       disabled={submitting}
                     />
-                  </Form.Group>
+                  </div>
 
-                  <Form.Group className="mb-3" controlId={`${idPrefix}-phone`}>
-                    <Form.Label>{cartCopy.phone}</Form.Label>
-                    <Form.Control
+                  <div className="form-group">
+                    <label className="form-label" htmlFor={`${idPrefix}-phone`}>
+                      {cartCopy.phone}
+                    </label>
+                    <input
+                      id={`${idPrefix}-phone`}
                       name="phone"
                       type="tel"
+                      className={`form-input${phoneInvalid ? " form-input--error" : ""}`}
                       required
                       placeholder={cartCopy.phonePlaceholder}
                       value={checkout.phone}
@@ -125,18 +148,20 @@ export default function CartDrawer() {
                       disabled={submitting}
                       inputMode="tel"
                       autoComplete="tel"
-                      isInvalid={phoneInvalid}
                     />
                     {phoneInvalid && (
-                      <Form.Control.Feedback type="invalid">{phoneError}</Form.Control.Feedback>
+                      <div className="form-error">{phoneError}</div>
                     )}
-                  </Form.Group>
+                  </div>
 
-                  <Form.Group className="mb-3" controlId={`${idPrefix}-address`}>
-                    <Form.Label>{cartCopy.address}</Form.Label>
-                    <Form.Control
-                      as="textarea"
+                  <div className="form-group">
+                    <label className="form-label" htmlFor={`${idPrefix}-address`}>
+                      {cartCopy.address}
+                    </label>
+                    <textarea
+                      id={`${idPrefix}-address`}
                       name="address"
+                      className="form-textarea"
                       required
                       rows={3}
                       placeholder={cartCopy.addressPlaceholder}
@@ -144,31 +169,31 @@ export default function CartDrawer() {
                       onChange={handleChange}
                       disabled={submitting}
                     />
-                  </Form.Group>
+                  </div>
 
-                  <div className="d-grid gap-2">
-                    <Button
+                  <div className="cart-checkout__actions">
+                    <button
                       type="submit"
-                      variant="success"
+                      className="btn btn--primary cart-checkout__submit"
                       disabled={!canPlaceOrder}
                     >
                       {submitting ? cartCopy.saving : cartCopy.placeOrder}
-                    </Button>
-                    <Button
+                    </button>
+                    <button
                       type="button"
-                      variant="outline-secondary"
+                      className="cart-checkout__clear"
                       onClick={clearCart}
                       disabled={submitting}
                     >
                       {cartCopy.clearCart}
-                    </Button>
+                    </button>
                   </div>
-                </Form>
-              </Card.Body>
-            </Card>
-          </>
-        )}
-      </Offcanvas.Body>
-    </Offcanvas>
+                </form>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

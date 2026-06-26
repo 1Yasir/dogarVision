@@ -1,10 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import Carousel from "react-bootstrap/Carousel";
-import Container from "react-bootstrap/Container";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-import Button from "react-bootstrap/Button";
-import Badge from "react-bootstrap/Badge";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { heroSlideGroups } from "../../data/heroSlides";
 import { heroCopy } from "../../data/copy";
 import { useCart } from "../../context/CartContext";
@@ -13,7 +7,10 @@ import { collection, onSnapshot } from "firebase/firestore";
 
 export default function HeroSlider() {
   const [dbProducts, setDbProducts] = useState([]);
-  const { addToCart } = useCart();
+  const [current, setCurrent] = useState(0);
+  const [instant, setInstant] = useState(false);
+  const { addToCart, openCart } = useCart();
+  const timerRef = useRef(null);
 
   useEffect(() => {
     const productsRef = collection(db, "products");
@@ -57,73 +54,133 @@ export default function HeroSlider() {
       .filter(Boolean);
   }, [dbProducts]);
 
+  const goTo = useCallback(
+    (index, isInstant = false) => {
+      if (slides.length === 0) return;
+      setInstant(isInstant);
+      setCurrent((index + slides.length) % slides.length);
+    },
+    [slides.length]
+  );
+
+  // Auto-play
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    timerRef.current = setInterval(() => goTo(current + 1), 5000);
+    return () => clearInterval(timerRef.current);
+  }, [current, slides.length, goTo]);
+
   const handleOrderNow = (slide) => {
     const product = slide.product;
     if (!product?.available || (Number(product.stockCount) || 0) <= 0) return;
     const quantity =
       product.unitType === "kg" ? (product.kgOptions?.[0] ?? 0.5) : 1;
     addToCart(product, quantity);
+    openCart();
   };
 
   if (slides.length === 0) {
     return (
-      <section id="home" className="py-5 bg-light">
-        <Container className="text-center">
-          <p className="text-muted">{heroCopy.loading}</p>
-        </Container>
+      <section id="home" className="hero-slider">
+        <div className="container" style={{ paddingTop: "40px", textAlign: "center" }}>
+          <p style={{ color: "var(--text-muted)" }}>{heroCopy.loading}</p>
+        </div>
       </section>
     );
   }
 
-  return (
-    <section id="home" aria-label="Featured banners">
-      <Carousel>
-        {slides.map((slide) => {
-          const productDiscount = slide.product?.discountPercentage ?? 0;
-          const hasDiscount = productDiscount > 0;
+  const activeSlide = slides[current];
+  const isAchar = activeSlide?.slideType === "achar";
 
-          return (
-            <Carousel.Item key={slide.id}>
-              <div className="bg-light py-5">
-                <Container>
-                  <Row className="align-items-center g-4">
-                    <Col md={7}>
-                      <Badge bg="success" className="mb-3">
+  return (
+    <section
+      id="home"
+      aria-label="Featured banners"
+      className={`hero-slider${isAchar ? " hero-slider--achar-active" : ""}`}
+    >
+      {/* Viewport + Track */}
+      <div className="hero-slider__viewport">
+        <div
+          className={`hero-slider__track${instant ? " hero-slider__track--instant" : ""}`}
+          style={{ transform: `translateX(-${current * 100}%)` }}
+        >
+          {slides.map((slide) => {
+            const productDiscount = slide.product?.discountPercentage ?? 0;
+            const hasDiscount = productDiscount > 0;
+            const slideIsAchar = slide.slideType === "achar";
+
+            return (
+              <div
+                key={slide.id}
+                className={`hero-slider__slide${
+                  slideIsAchar
+                    ? " hero-slider__slide--achar"
+                    : " hero-slider__slide--poultry"
+                }`}
+              >
+                <div className="container">
+                  <div className="hero-slider__content">
+                    {/* Left: Text */}
+                    <div>
+                      <div className="hero-slider__badge">
+                        <span className="hero-slider__badge-dot" />
                         {slide.badge}
-                      </Badge>
-                      <h1 className="display-5 fw-bold mb-3">
+                      </div>
+
+                      <h1 className="hero-slider__title">
                         {slide.title}{" "}
-                        <span className="text-success">{slide.highlight}</span>
+                        <span>{slide.highlight}</span>
                       </h1>
-                      <p className="lead text-muted mb-4">{slide.subtitle}</p>
-                      <Button
-                        variant="success"
-                        size="lg"
+
+                      <p className="hero-slider__subtitle">{slide.subtitle}</p>
+
+                      <button
+                        className="btn btn--primary"
                         onClick={() => handleOrderNow(slide)}
                       >
                         {heroCopy.orderNow}
-                      </Button>
-                    </Col>
-                    <Col md={5} className="text-center position-relative">
+                      </button>
+                    </div>
+
+                    {/* Right: Visual */}
+                    <div className="hero-slider__visual">
                       {hasDiscount && (
-                        <Badge
-                          bg="danger"
-                          className="position-absolute top-0 end-0 m-2"
-                        >
+                        <span className="hero-slider__discount-tag">
                           {productDiscount}% OFF
-                        </Badge>
+                        </span>
                       )}
-                      <span style={{ fontSize: "5rem" }} aria-hidden="true">
+                      <span
+                        className="hero-slider__emoji"
+                        aria-hidden="true"
+                      >
                         {slide.emoji}
                       </span>
-                    </Col>
-                  </Row>
-                </Container>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </Carousel.Item>
-          );
-        })}
-      </Carousel>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Dots */}
+      {slides.length > 1 && (
+        <div className="hero-slider__dots" role="tablist" aria-label="Slides">
+          {slides.map((slide, i) => (
+            <button
+              key={slide.id}
+              role="tab"
+              aria-selected={i === current}
+              aria-label={`Slide ${i + 1}`}
+              className={`hero-slider__dot${
+                i === current ? " hero-slider__dot--active" : ""
+              }`}
+              onClick={() => goTo(i)}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

@@ -7,13 +7,6 @@ import {
   serverTimestamp,
   where,
 } from "firebase/firestore";
-import Container from "react-bootstrap/Container";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-import Card from "react-bootstrap/Card";
-import Form from "react-bootstrap/Form";
-import Button from "react-bootstrap/Button";
-import Alert from "react-bootstrap/Alert";
 import { db } from "../../firebase";
 import SectionTitle from "../common/SectionTitle";
 
@@ -21,9 +14,15 @@ const initialForm = { name: "", rating: "", review: "" };
 
 function StarRating({ rating }) {
   return (
-    <div aria-label={`${rating} out of 5 stars`}>
+    <div
+      className="feedback-card__stars"
+      aria-label={`${rating} out of 5 stars`}
+    >
       {Array.from({ length: 5 }, (_, n) => (
-        <span key={n} className={n < rating ? "text-warning" : "text-muted"}>
+        <span
+          key={n}
+          className={n < rating ? "feedback-card__star--filled" : ""}
+        >
           ★
         </span>
       ))}
@@ -44,7 +43,12 @@ export default function FeedbackSection() {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        setReviews(snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })));
+        setReviews(
+          snapshot.docs.map((docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          }))
+        );
         setLoading(false);
       },
       (err) => {
@@ -83,8 +87,8 @@ export default function FeedbackSection() {
   };
 
   return (
-    <section id="feedback" className="py-5 bg-light">
-      <Container>
+    <section id="feedback" className="section feedback">
+      <div className="container">
         <SectionTitle
           label="Customer Reviews"
           title="What Our Customers Say"
@@ -92,117 +96,117 @@ export default function FeedbackSection() {
           centered
         />
 
-        <Card className="shadow-sm border-0 mb-5">
-          <Card.Body className="p-4">
-            <h3 className="h5 mb-3">Leave a Feedback</h3>
-            {submitted ? (
-              <Alert variant="success">
-                Thank you! Your feedback has been successfully submitted and added below.
-              </Alert>
-            ) : (
-              <Form onSubmit={handleSubmit}>
-                <Row className="g-3">
-                  <Col md={6}>
-                    <Form.Group controlId="feedbackName">
-                      <Form.Label>Name *</Form.Label>
-                      <Form.Control
-                        name="name"
-                        type="text"
-                        required
-                        placeholder="Your name"
-                        value={form.name}
-                        onChange={handleChange}
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group controlId="feedbackRating">
-                      <Form.Label>Rating *</Form.Label>
-                      <Form.Select
-                        name="rating"
-                        required
-                        value={form.rating}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select rating</option>
-                        <option value="5">5 — Excellent</option>
-                        <option value="4">4 — Very Good</option>
-                        <option value="3">3 — Good</option>
-                        <option value="2">2 — Fair</option>
-                        <option value="1">1 — Poor</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                  <Col xs={12}>
-                    <Form.Group controlId="feedbackReview">
-                      <Form.Label>Review *</Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        name="review"
-                        required
-                        rows={4}
-                        placeholder="Tell us about your experience with our natural products..."
-                        value={form.review}
-                        onChange={handleChange}
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
+        {/* ── Feedback Form ── */}
+        <div className="feedback__form-wrap">
+          <h3 className="feedback__form-title">Leave a Feedback</h3>
 
-                {error && (
-                  <Alert variant="danger" className="mt-3">
-                    {error}
-                  </Alert>
-                )}
+          {submitted ? (
+            <div className="form-success">
+              Thank you! Your feedback has been successfully submitted and added below.
+            </div>
+          ) : (
+            <form className="feedback__form" onSubmit={handleSubmit} noValidate>
+              <div className="form-row">
+                {/* Name */}
+                <div className="form-group">
+                  <label className="form-label" htmlFor="feedbackName">
+                    Name *
+                  </label>
+                  <input
+                    id="feedbackName"
+                    className="form-input"
+                    name="name"
+                    type="text"
+                    required
+                    placeholder="Your name"
+                    value={form.name}
+                    onChange={handleChange}
+                  />
+                </div>
 
-                <Button
-                  type="submit"
-                  variant="success"
-                  className="mt-3"
-                  disabled={submitting}
-                >
-                  {submitting ? "Submitting..." : "Submit Feedback"}
-                </Button>
-              </Form>
-            )}
-          </Card.Body>
-        </Card>
+                {/* Rating */}
+                <div className="form-group">
+                  <label className="form-label" htmlFor="feedbackRating">
+                    Rating *
+                  </label>
+                  <select
+                    id="feedbackRating"
+                    className="form-select"
+                    name="rating"
+                    required
+                    value={form.rating}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select rating</option>
+                    <option value="5">5 — Excellent</option>
+                    <option value="4">4 — Very Good</option>
+                    <option value="3">3 — Good</option>
+                    <option value="2">2 — Fair</option>
+                    <option value="1">1 — Poor</option>
+                  </select>
+                </div>
+              </div>
 
-        <h3 className="h5 mb-3">Customer Reviews</h3>
+              {/* Review */}
+              <div className="form-group">
+                <label className="form-label" htmlFor="feedbackReview">
+                  Review *
+                </label>
+                <textarea
+                  id="feedbackReview"
+                  className="form-textarea"
+                  name="review"
+                  required
+                  rows={4}
+                  placeholder="Tell us about your experience with our natural products..."
+                  value={form.review}
+                  onChange={handleChange}
+                />
+              </div>
+
+              {error && (
+                <p className="feedback__error">{error}</p>
+              )}
+
+              <button
+                type="submit"
+                className="btn btn--primary"
+                disabled={submitting}
+              >
+                {submitting ? "Submitting..." : "Submit Feedback"}
+              </button>
+            </form>
+          )}
+        </div>
+
+        {/* ── Reviews List ── */}
+        <h3 className="feedback__list-title">Customer Reviews</h3>
+
         {loading ? (
-          <p className="text-muted">Loading reviews...</p>
+          <p className="feedback__status">Loading reviews...</p>
         ) : reviews.length === 0 ? (
-          <p className="text-muted">
+          <p className="feedback__status">
             No reviews yet. Be the first to share your experience!
           </p>
         ) : (
-          <Row className="g-3">
+          <div className="feedback-grid">
             {reviews.map((review) => (
-              <Col key={review.id} sm={6} lg={4}>
-                <Card className="shadow-sm h-100 border-0">
-                  <Card.Body>
-                    <div className="d-flex align-items-center gap-3 mb-2">
-                      <div
-                        className="rounded-circle bg-success text-white d-flex align-items-center justify-content-center"
-                        style={{ width: 40, height: 40, fontWeight: 600 }}
-                      >
-                        {review.name?.charAt(0)?.toUpperCase() || "?"}
-                      </div>
-                      <div>
-                        <Card.Title as="h4" className="h6 mb-0">
-                          {review.name}
-                        </Card.Title>
-                        <StarRating rating={review.rating} />
-                      </div>
-                    </div>
-                    <Card.Text className="small text-muted">{review.review}</Card.Text>
-                  </Card.Body>
-                </Card>
-              </Col>
+              <div key={review.id} className="feedback-card">
+                <div className="feedback-card__header">
+                  <div className="feedback-card__avatar">
+                    {review.name?.charAt(0)?.toUpperCase() || "?"}
+                  </div>
+                  <div>
+                    <p className="feedback-card__name">{review.name}</p>
+                    <StarRating rating={review.rating} />
+                  </div>
+                </div>
+                <p className="feedback-card__review">{review.review}</p>
+              </div>
             ))}
-          </Row>
+          </div>
         )}
-      </Container>
+      </div>
     </section>
   );
 }

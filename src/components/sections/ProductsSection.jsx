@@ -1,9 +1,4 @@
 import { useMemo, useState, useEffect } from "react";
-import Container from "react-bootstrap/Container";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-import ButtonGroup from "react-bootstrap/ButtonGroup";
-import Button from "react-bootstrap/Button";
 import { productFilters, getSortedProducts } from "../../data/siteData";
 import { productsCopy } from "../../data/copy";
 import { useCart } from "../../context/CartContext";
@@ -54,47 +49,43 @@ export default function ProductsSection() {
 
   if (loading) {
     return (
-      <section id="products" className="py-5">
-        <Container className="text-center">
-          <p className="text-muted">{productsCopy.loading}</p>
-        </Container>
+      <section id="products" className="section">
+        <div className="container" style={{ textAlign: "center" }}>
+          <p style={{ color: "var(--text-muted)" }}>{productsCopy.loading}</p>
+        </div>
       </section>
     );
   }
 
   return (
-    <section id="products" className="py-5">
-      <Container>
+    <section id="products" className="section">
+      <div className="container">
         <SectionTitle
           label={productsCopy.label}
           title={productsCopy.title}
           desc={productsCopy.desc}
         />
 
-        <div className="d-flex justify-center mb-4">
-          <ButtonGroup className="flex-wrap">
-            {productFilters.map(({ id }) => (
-              <Button
-                key={id}
-                variant={activeFilter === id ? "success" : "outline-success"}
-                onClick={() => setActiveFilter(id)}
-                size="sm"
-                className="mb-1"
-              >
-                {productsCopy.filters[id]}
-              </Button>
-            ))}
-          </ButtonGroup>
+        {/* Filter Buttons */}
+        <div className="products__filters">
+          {productFilters.map(({ id }) => (
+            <button
+              key={id}
+              className={`filter-btn${activeFilter === id ? " filter-btn--active" : ""}`}
+              onClick={() => setActiveFilter(id)}
+            >
+              {productsCopy.filters[id]}
+            </button>
+          ))}
         </div>
 
-        <Row className="g-4">
+        {/* Products Grid */}
+        <div className="products-grid">
           {filtered.map((product) => (
-            <Col key={product.id} sm={6} lg={4}>
-              <ProductCard {...product} />
-            </Col>
+            <ProductCard key={product.id} {...product} />
           ))}
-        </Row>
-      </Container>
+        </div>
+      </div>
     </section>
   );
 }

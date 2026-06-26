@@ -1,8 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import Card from "react-bootstrap/Card";
-import Badge from "react-bootstrap/Badge";
-import Button from "react-bootstrap/Button";
 import { useCart } from "../../context/CartContext";
 import { productsCopy } from "../../data/copy";
 import { clampQuantity, roundQuantity, STOCK_MAX_MESSAGE } from "../../utils/stockValidation";
@@ -83,39 +80,60 @@ export default function ProductCard({
     }
   };
 
+  /* ── Image Block ── */
   const imageBlock = (
-    <div
-      className="position-relative text-center py-4 bg-light rounded-top"
-      style={{ minHeight: "160px" }}
-    >
-      <Badge bg="warning" className="position-absolute top-0 start-0 m-2">
+    <div className="product-card__image">
+      <span
+        className={`product-card__badge${!isAvailable ? " product-card__badge--unavailable" : ""}`}
+      >
         {badgeText}
-      </Badge>
-      <span style={{ fontSize: "3.5rem", lineHeight: 1 }} aria-hidden="true">
+      </span>
+      <span className="product-card__emoji" aria-hidden="true">
         {emoji}
       </span>
       {imageLabel && (
-        <span className="d-block small text-muted mt-2">{imageLabel}</span>
+        <span className="product-card__image-label">{imageLabel}</span>
       )}
     </div>
   );
 
+  /* ── Price Block ── */
   const priceBlock = (
-    <div className="d-flex align-items-center gap-2 flex-wrap mb-2">
+    <div className="product-card__price">
       {hasDiscount ? (
         <>
-          <span className="fw-bold text-success">
+          <span>
             {isKgProduct
               ? `${formatPrice(finalPrice)} (${selectedKg} ${unit})`
               : `${formatPrice(finalPrice)} / ${unit}`}
           </span>
-          <span className="text-muted small text-decoration-line-through">
+          <span
+            style={{
+              color: "var(--text-muted)",
+              textDecoration: "line-through",
+              fontSize: "0.875rem",
+              marginLeft: "8px",
+              fontWeight: 500,
+            }}
+          >
             {isKgProduct ? formatPrice(basePrice) : `${formatPrice(unitPrice)} / ${unit}`}
           </span>
-          <Badge bg="danger">{discountPercentage}% OFF</Badge>
+          <span
+            style={{
+              background: "#ef4444",
+              color: "#fff",
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              padding: "2px 8px",
+              borderRadius: "12px",
+              marginLeft: "6px",
+            }}
+          >
+            {discountPercentage}% OFF
+          </span>
         </>
       ) : (
-        <span className="fw-bold text-success">
+        <span>
           {isKgProduct
             ? `${formatPrice(basePrice)} (${selectedKg} ${unit})`
             : `${formatPrice(unitPrice)} / ${unit}`}
@@ -124,56 +142,59 @@ export default function ProductCard({
     </div>
   );
 
+  /* ── Body Content ── */
   const bodyContent = (
     <>
-      <Card.Title as="h3" className="h5">{name}</Card.Title>
-      {desc && <Card.Text className="text-muted small">{desc}</Card.Text>}
+      <h3 className="product-card__name">{name}</h3>
+      {desc && <p className="product-card__desc">{desc}</p>}
       {priceBlock}
     </>
   );
 
+  /* ── Add to Cart Button ── */
   const cartButton = (
-    <Button
-      variant="success"
-      size="sm"
-      className="w-100"
+    <button
+      className={`btn btn--primary btn--sm w-100${addedFeedback ? " product-card__add-btn--added" : ""}`}
       onClick={handleAddToCart}
       disabled={!isAvailable}
+      style={{ width: "100%" }}
     >
       {addedFeedback ? productsCopy.added : productsCopy.addToCart}
-    </Button>
+    </button>
   );
 
+  /* ── With Detail Link ── */
   if (path) {
     return (
-      <Card className="shadow-sm h-100 border-0">
+      <div className={`product-card product-card--has-detail${!isAvailable ? " product-card--unavailable" : ""}`}>
         <Link
           to={path}
-          className="text-decoration-none text-body stretched-link"
+          className="product-card__detail-link"
           onClick={handleCardClick}
         >
           {imageBlock}
-          <Card.Body>
+          <div className="product-card__body product-card__body--linked">
             {bodyContent}
-            <span className="small text-success">
+            <span className="product-card__view-detail">
               {isAvailable ? productsCopy.viewDetails : productsCopy.comingSoon}
             </span>
-          </Card.Body>
+          </div>
         </Link>
-        <Card.Footer className="bg-white border-0 pt-0" style={{ position: "relative", zIndex: 2 }}>
+        <div className="product-card__footer">
           {cartButton}
-        </Card.Footer>
-      </Card>
+        </div>
+      </div>
     );
   }
 
+  /* ── Without Detail Link ── */
   return (
-    <Card className="shadow-sm h-100 border-0">
+    <div className={`product-card${!isAvailable ? " product-card--unavailable" : ""}`}>
       {imageBlock}
-      <Card.Body className="d-flex flex-column">
+      <div className="product-card__body">
         {bodyContent}
-        <div className="mt-auto">{cartButton}</div>
-      </Card.Body>
-    </Card>
+        <div style={{ marginTop: "auto" }}>{cartButton}</div>
+      </div>
+    </div>
   );
 }
