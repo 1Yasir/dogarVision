@@ -28,6 +28,9 @@ export default function HeroSlider() {
   const { addToCart, openCart } = useCart();
   const timerRef = useRef(null);
 
+  // Zaroorat ke mutabiq images ke broken links ko fallback par dalne ke liye track state
+  const [brokenImages, setBrokenImages] = useState({});
+
   useEffect(() => {
     const productsRef = collection(db, "products");
     const unsubscribe = onSnapshot(
@@ -100,8 +103,6 @@ export default function HeroSlider() {
     openCart();
   };
 
-  // 3. HUMNE PURANA "LOADING FRESH PRODUCT" WALA IF-STATEMENT HATA DIYA HAI
-
   const activeSlide = slides[current];
   const isAchar = activeSlide?.slideType === "achar";
 
@@ -121,6 +122,10 @@ export default function HeroSlider() {
             const productDiscount = slide.product?.discountPercentage ?? 0;
             const hasDiscount = productDiscount > 0;
             const slideIsAchar = slide.slideType === "achar";
+            
+            // Firebase se image URL check karein
+            const slideImageUrl = slide.product?.imageUrl; 
+            const isImageBroken = brokenImages[slide.id];
 
             return (
               <div
@@ -161,16 +166,30 @@ export default function HeroSlider() {
                     {/* Right: Visual */}
                     <div className="hero-slider__visual">
                       {hasDiscount && (
-                        <span className="hero-slider__discount-tag">
+                        <span className="hero-slider__discount-tag" style={{ zIndex: 10 }}>
                           {productDiscount}% OFF
                         </span>
                       )}
-                      <span
-                        className="hero-slider__emoji"
-                        aria-hidden="true"
-                      >
-                        {slide.emoji}
-                      </span>
+
+                      {/* Naya Image rendering check fallback system ke sath */}
+                      {slideImageUrl && !isImageBroken ? (
+                        <img
+                          src={slideImageUrl}
+                          alt={slide.title}
+                          className="hero-slider__img"
+                          onError={() => {
+                            setBrokenImages(prev => ({ ...prev, [slide.id]: true }));
+                          }}
+                        />
+                      ) : (
+                        /* Purana Emoji Fallback */
+                        <span
+                          className="hero-slider__emoji"
+                          aria-hidden="true"
+                        >
+                          {slide.emoji}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

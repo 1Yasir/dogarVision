@@ -98,12 +98,6 @@ export default function ProductCard({
           src={imageUrl}
           alt={name}
           className="product-card__img"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-            padding: "10px",
-          }}
           onError={() => setImageError(true)} // ◄ Agar folder me file na ho, to auto emoji par shift ho jaye
         />
       ) : (

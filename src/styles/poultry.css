@@ -474,6 +474,7 @@ html.dark .nav__theme-btn {
   border: 2px solid #e2e8f0;
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.1);
   position: relative;
+  overflow: hidden;
 }
 
 .hero-slider__discount-tag {
@@ -870,6 +871,12 @@ html.dark .product-card__badge--unavailable {
 
 .product-card__detail-link:hover .product-card__view-detail {
   color: #15803d;
+}
+.product-card__img{
+  transition: scale 0.2s ease;
+}
+.product-card__detail-link:hover .product-card__img{
+  scale:1.1;
 }
 
 .product-card__body--linked {
