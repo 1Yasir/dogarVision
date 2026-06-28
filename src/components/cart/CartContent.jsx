@@ -70,10 +70,10 @@ export default function CartContent() {
             <span>{cartCopy.subtotal} ({items.length} {itemLabel})</span>
             <span>{formatPrice(totalBill)}</span>
           </div>
-          <div className="cart-bill__row cart-bill__row--delivery">
+          {/* <div className="cart-bill__row cart-bill__row--delivery">
             <span>{cartCopy.delivery}</span>
             <span className="cart-bill__free">{cartCopy.deliveryPending}</span>
-          </div>
+          </div> */}
           <div className="cart-bill__total">
             <span>{cartCopy.totalBill}</span>
             <span className="cart-bill__total-amount">{formatPrice(totalBill)}</span>
@@ -83,7 +83,7 @@ export default function CartContent() {
 
       {/* Right Col — Checkout Form */}
       <div className="cart-page__panel">
-        <h3 className="cart-checkout__title">{cartCopy.checkoutTitle}</h3>
+        {/* <h3 className="cart-checkout__title">{cartCopy.checkoutTitle}</h3> */}
 
         {errorMessage && (
           <div className="form-error" style={{ marginBottom: "16px" }}>
