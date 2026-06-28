@@ -9,7 +9,7 @@ import CartDrawer from "./components/cart/CartDrawer";
 import AdminDashboard from "./pages/AdminDashboard";
 import LoginPage from "./pages/LoginPage"; // 1. Login Page import karen (agar pehle se bani hai)
 import ProtectedRoute from "./components/common/ProtectedRoute"; // 2. ProtectedRoute import karen
-import "./styles/poultry.css";
+import "./styles/global.css";
 
 export default function App() {
   return (

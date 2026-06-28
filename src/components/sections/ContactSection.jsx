@@ -6,6 +6,9 @@ const MAP_EMBED_URL =
   "https://maps.google.com/maps?q=Sehjowal+Chak+No.+11,+Tehsil+Pattoki,+District+Kasur&t=&z=13&ie=UTF8&iwloc=&output=embed";
 
 export default function ContactSection() {
+  // Static string ko hatakar dynamic clean phone number banana standard code practice hai
+  const cleanPhone = contactInfo.phone.replace(/[^0-9+]/g, "");
+
   return (
     <section id="contact" className="section inquiry">
       <div className="container">
@@ -28,8 +31,9 @@ export default function ContactSection() {
                 </div>
                 <div>
                   <p className="inquiry__info-label">{contactCopy.phoneLabel}</p>
+                  {/* Ab yeh link pure dynamic ho chuka hai, siteData se hi badal jaye ga */}
                   <a
-                    href="tel:+923044169153"
+                    href={`tel:${cleanPhone}`}
                     className="inquiry__info-value inquiry__info-link"
                   >
                     {contactInfo.phone}
@@ -66,7 +70,7 @@ export default function ContactSection() {
           <div className="inquiry__map">
             <iframe
               className="inquiry__map-iframe"
-              title="DogarVision Farm Location"
+              title="DogarVision Corporate Operations Map"
               src={MAP_EMBED_URL}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"

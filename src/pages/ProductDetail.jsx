@@ -40,9 +40,11 @@ export default function ProductDetail() {
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [submittingDirect, setSubmittingDirect] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isImageBroken, setIsImageBroken] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    setIsImageBroken(false); 
   }, [productId]);
 
   useEffect(() => {
@@ -95,9 +97,9 @@ export default function ProductDetail() {
 
   if (loadingProduct) {
     return (
-      <div className="poultry">
+      <div className="bg-body min-vh-100 d-flex flex-column justify-content-between">
         <NavBar />
-        <div className="container" style={{ paddingTop: "120px", paddingBottom: "80px", minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="container d-flex align-items-center justify-content-center flex-grow-1" style={{ paddingTop: "120px", paddingBottom: "80px" }}>
           <p className="section-desc">Loading product details...</p>
         </div>
         <Footer />
@@ -121,6 +123,8 @@ export default function ProductDetail() {
       : baseUnitPrice;
   const isOutOfStock = currentStock <= 0;
   const seo = seoCopy.product(product.name);
+
+  const currentCategoryClass = product.category || "poultry";
 
   const applyQuantity = (rawValue) => {
     const rounded = roundQuantity(rawValue, unitType);
@@ -206,7 +210,7 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className="poultry product-detail-page">
+    <div className={`${currentCategoryClass} product-detail-page`}>
       <SeoHelmet
         title={seo.title}
         description={seo.description}
@@ -341,8 +345,20 @@ export default function ProductDetail() {
               </div>
 
               {/* Right: Visual */}
-              <div className="product-detail__visual" aria-hidden="true">
-                <span className="product-detail__emoji">{product.emoji}</span>
+              <div className="product-detail__visual">
+                {product.imageUrl && !isImageBroken ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={`${product.name} - DogarVision Marketplace`}
+                    className="product-detail__img"
+                    loading="eager"
+                    onError={() => setIsImageBroken(true)}
+                  />
+                ) : (
+                  <span className="product-detail__emoji" aria-hidden="true">
+                    {product.emoji}
+                  </span>
+                )}
               </div>
             </div>
           </div>

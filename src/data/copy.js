@@ -1,148 +1,156 @@
-/** English-only UI copy — replaces removed i18n layer. */
-
 export const navCopy = {
   home: "Home",
-  about: "About",
-  products: "Products",
+  about: "About Us",
+  products: "Our Shop",
   cart: "Cart",
   contact: "Contact",
 };
 
 export const heroCopy = {
   orderNow: "Order Now",
-  loading: "Loading fresh products…",
+  loading: "Loading fresh organic products…",
   slides: {
-    achar: {
-      badge: "Premium Quality",
-      title: "100% Homemade & Authentic",
-      highlight: "Achar",
+    // 1. New Agriculture Fruit Slide (Kinnow, Mangoes, Fruits Agriculture Focus)
+    agriculture: {
+      badge: "Export Quality · Premium Fruits",
+      title: "Fresh Seasonal & Premium",
+      highlight: "Organic Fruits",
       subtitle:
-        "Traditional family recipes, sun-ripened ingredients, and zero artificial preservatives — crafted in small batches for authentic taste.",
+        "Premium export-quality seasonal fruits including sweet Kinnows, rich Mangoes, and fresh Guavas (Amrood) — handpicked direct from certified organic farms.",
+    },
+    achar: {
+      badge: "100% Traditional",
+      title: "Homemade & Authentic Premium",
+      highlight: "Traditional Achar",
+      subtitle:
+        "Traditional family recipes, sun-ripened ingredients, and zero artificial preservatives — crafted in small batches with pure oils for authentic home taste.",
     },
     poultry: {
-      badge: "Farm Fresh · Premium Quality",
-      title: "Fresh, Healthy & Organic",
-      highlight: "Poultry Products",
+      badge: "Farm Fresh · Certified Organic",
+      title: "Fresh, Healthy & Premium",
+      highlight: "Poultry & Eggs",
       subtitle:
-        "High-quality chicken, organic eggs, and day-old chicks raised with the highest biosecurity and hygiene standards for your family.",
+        "High-quality broiler chicken, nutrient-dense organic eggs, and healthy day-old chicks raised with the highest biosecurity and clean farming standards.",
     },
     dairy: {
-      badge: "Pure & Organic",
-      title: "Fresh Milk & Traditional",
-      highlight: "Dairy Products",
+      badge: "Pure & Natural Dairy",
+      title: "Khalis Farm Milk & Traditional",
+      highlight: "Desi Ghee & Dairy",
       subtitle:
-        "Pure, farm-fresh milk and traditional desi ghee prepared with the highest hygiene standards. Rich in nutrients and authentic taste.",
+        "Pure, unprocessed farm-fresh milk and traditional golden desi ghee prepared with ancient slow-churning methods. 100% rich in natural nutrients.",
     },
   },
 };
 
 export const aboutCopy = {
-  label: "About Us",
-  title: "Why Choose Our Products?",
-  desc: "Hard work, strict bio-security, and high-quality feed ensure that all our poultry and organic farm-fresh products are completely healthy, pure, and natural. We serve wholesale buyers, grocery stores, restaurants, and direct consumers.",
+  label: "About Our Ecosystem",
+  title: "Why Choose Our Organic Agriculture?",
+  desc: "Through sustainable agriculture, strict bio-security, and 100% natural practices, we ensure that our dairy, poultry, fresh fruits, and homemade organic foods are completely healthy, pure, and premium. We serve local communities, wholesale markets, national distributors, and international clients.",
   features: {
+    naturalFarming: {
+      title: "Sustainable Agriculture",
+      desc: "We follow natural farming and organic cultivation methods to protect nutrient richness without toxic pesticides.",
+    },
     biosecurity: {
-      title: "Biosecurity & Hygiene",
-      desc: "Strict disease control protocols and a clean, sanitized environment keep our flock healthy and safe.",
+      title: "Biosecurity & Traceability",
+      desc: "Strict disease control protocols and automated clean environments keep our livestock, poultry, and dairy production safe.",
     },
-    organic: {
-      title: "100% Organic Feed",
-      desc: "No harmful chemicals or growth promoters — only natural, high-quality feed for completely organic growth.",
-    },
-    supply: {
-      title: "Consistent Supply",
-      desc: "Fresh daily production with reliable wholesale delivery to grocery stores, restaurants, and bulk buyers.",
+    globalSupply: {
+      title: "Global Supply Chain",
+      desc: "Consistent daily production optimized for global standards, serving local households, wholesale markets, and international distribution.",
     },
   },
 };
 
 export const productsCopy = {
-  label: "Our Products",
-  title: "Fresh From Our Farms",
-  desc: "Browse our farm-fresh poultry and premium homemade achar. Available for wholesale, retail, and bulk orders with competitive pricing.",
-  loading: "Loading products…",
+  label: "Our Marketplace",
+  title: "Fresh From Our Farms To The World",
+  desc: "Browse our premium range of organic fruits, farm-fresh dairy, pure poultry, and premium traditional achar. Built for global retail and wholesale.",
+  loading: "Loading fresh products…",
   comingSoon: "Coming Soon",
   addToCart: "Add to Cart",
   added: "✓ Added!",
   viewDetails: "View Details →",
   unavailableAlert: (name) =>
-    `Sorry! ${name} is not available yet. It will be launched soon.`,
+    `Sorry! ${name} is not available yet. It will be launched soon in the next phase.`,
   filters: {
-    all: "All Products",
-    eggs: "Eggs",
-    chicken: "Chicken",
-    chicks: "Chicks",
-    achar: "Achar",
-    dairy: "Dairy",
+    all: "All Marketplace",
+    dairy: "Dairy & Milk",
+    fruits: "Organic Fruits",
+    achar: "Homemade Achar",
+    eggs: "Organic Eggs",
+    chicken: "Fresh Chicken",
+    chicks: "Day-Old Chicks",
   },
 };
 
 export const contactCopy = {
-  label: "Get in Touch",
-  title: "Contact Us",
-  desc: "Reach out for orders, wholesale inquiries, or any questions about our farm-fresh products.",
-  phoneLabel: "Phone / WhatsApp",
-  addressLabel: "Farm Address",
-  hoursLabel: "Business Hours",
+  label: "Global Operations",
+  title: "Connect With Us",
+  desc: "Reach out for local orders, national wholesale distributions, or international export inquiries.",
+  phoneLabel: "Phone / WhatsApp Support",
+  addressLabel: "Head Office & Farm Address",
+  hoursLabel: "Operational Hours",
 };
 
 export const cartCopy = {
   breadcrumbHome: "Home",
   breadcrumbCart: "Cart",
-  label: "Live Billing",
-  title: "Your Cart & Checkout",
-  desc: "Review your order, adjust quantities, and place your order via WhatsApp with live bill calculation.",
-  emptyTitle: "Your cart is empty",
-  emptyDesc: "Browse our products and add items to get started.",
-  shopProducts: "Shop Products",
+  label: "Live Billing Engine",
+  title: "Your Cart & Secure Checkout",
+  desc: "Review your organic items, adjust weights/quantities, and finalize your order directly via WhatsApp with automated live bill calculation.",
+  emptyTitle: "Your organic basket is empty",
+  emptyDesc: "Explore our farm-fresh categories and add premium items to get started.",
+  shopProducts: "Browse Marketplace",
   subtotal: "Subtotal",
-  item: "item",
-  items: "items",
-  delivery: "Delivery",
-  deliveryPending: "To be confirmed",
-  totalBill: "Total Bill",
-  checkoutTitle: "Checkout Details",
-  fullName: "Full Name *",
-  fullNamePlaceholder: "Your full name",
-  phone: "Phone Number *",
-  phonePlaceholder: "03xxxxxxxxx",
-  address: "Delivery Address *",
-  addressPlaceholder: "House no., street, area, city",
-  placeOrder: "Place Order via WhatsApp",
-  saving: "Saving order…",
-  clearCart: "Clear Cart",
+  item: "product",
+  items: "products",
+  delivery: "Shipping & Logistics",
+  deliveryPending: "Calculated based on location",
+  totalBill: "Total Amount Payable",
+  checkoutTitle: "International Logistics & Delivery Details",
+  fullName: "Full Name / Company Name *",
+  fullNamePlaceholder: "Enter your full name or corporate identity",
+  phone: "Contact Number (WhatsApp Active) *",
+  phonePlaceholder: "+92 3xxxxxxxxx",
+  address: "Complete Destination Address *",
+  addressPlaceholder: "House/Plot, Street, Area, City, State, Country",
+  placeOrder: "Confirm Order via WhatsApp",
+  saving: "Processing your order securely…",
+  clearCart: "Reset Cart",
   decrease: "Decrease",
   increase: "Increase",
   quantity: "Quantity for",
-  remove: "Remove",
-  orderSuccess: "Thank you! Your order was saved successfully.",
-  orderError: "Could not save the order. Please try again or contact us on WhatsApp.",
+  remove: "Remove Item",
+  orderSuccess: "Thank you! Your order was generated and logged successfully.",
+  orderError: "Could not log the order. Please retry or contact our export desk on WhatsApp.",
   stockChanged: (name, available) =>
-    `${name} is low on stock. Only ${available} available — please update your cart.`,
+    `${name} has limited stock. Only ${available} units available — please adjust before international checkout.`,
 };
 
 export const seoCopy = {
   home: {
-    title: "Pure Desi Ghee & Premium Organic Products",
+    // Title ko clean aur to-the-point kiya taakay template ke sath double na lagay
+    title: "Premium Organic Agriculture, Dairy & Poultry Exports",
     description:
-      "Shop pure desi ghee, organic honey, homemade achar, farm-fresh eggs, and dairy delivery across Pakistan. Dogar Vision — trusted organic food online.",
+      "Buy export-quality organic fruits (mangoes, kinnow), pure desi ghee, khalis farm milk, homemade achar, and premium poultry online. Worldwide standards by Dogar Vision.",
     keywords:
-      "desi ghee lahore, organic store pakistan, dogar vision online shopping, pure honey, homemade achar, dairy delivery",
+      "organic food pakistan, pure desi ghee lahore, fresh milk delivery, mango exports pakistan, premium kinnow online, traditional achar, agriculture marketplace, dogar vision",
   },
   cart: {
-    title: "Your Cart & Checkout",
+    title: "Secure Checkout & Logistics",
     description:
-      "Review your organic food order, adjust quantities, and checkout via WhatsApp. Fresh poultry, desi ghee, and homemade achar from Dogar Vision.",
-    keywords: "dogar vision cart, organic food checkout pakistan, whatsapp order",
+      "Finalize your order for premium organic food, agriculture produce, dairy, and poultry. Fast delivery and real-time WhatsApp order tracking.",
+    keywords: "dogar vision cart, order organic food online, wholesale agriculture delivery",
   },
   admin: {
-    title: "Admin Dashboard",
-    description: "Dogar Vision admin — manage products, orders, and customer reviews.",
-    keywords: "dogar vision admin",
+    title: "Global Management Control",
+    description: "Dogar Vision internal enterprise dashboard to monitor global supply, manage inventories, and track client orders.",
+    keywords: "dogar vision admin dashboard, agriculture inventory management",
   },
   product: (name) => ({
-    title: `${name} — Buy Online`,
-    description: `Order ${name} from Dogar Vision. Pure, organic, farm-fresh products delivered across Pakistan.`,
-    keywords: `${name}, dogar vision, organic food pakistan, desi ghee lahore`,
+    title: `${name} | Certified Organic & Pure`,
+    description: `Order premium quality ${name} from Dogar Vision. 100% natural, farm-fresh agriculture and organic production standard.`,
+    keywords: `${name}, organic ${name}, buy ${name} pakistan, export quality organic foods, dogar vision`,
   }),
 };

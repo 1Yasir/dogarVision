@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { productFilters, getSortedProducts } from "../../data/siteData";
+import { getSortedProducts } from "../../data/siteData";
 import { productsCopy } from "../../data/copy";
 import { useCart } from "../../context/CartContext";
 import SectionTitle from "../common/SectionTitle";
@@ -39,6 +39,20 @@ export default function ProductsSection() {
     }
   }, [productsList, syncStockCounts]);
 
+  // 🔥 Smart Logic: Sirf wahi buttons show hon ge jinki products database mein hain!
+  const activeFilterIds = useMemo(() => {
+    // 1. copy.js se saare define filters ki keys uthayein
+    const allFilterIds = Object.keys(productsCopy.filters);
+
+    // 2. Filter karein ke kaun si category ke products asall mein mojud hain
+    return allFilterIds.filter((id) => {
+      if (id === "all") return true; // 'all' wala button hamesha show hoga
+      
+      // Check karein ke kya productsList mein is category ka kam az kam 1 product hai?
+      return productsList.some((product) => product.category === id);
+    });
+  }, [productsList]);
+
   const filtered = useMemo(() => {
     const list =
       activeFilter === "all"
@@ -66,9 +80,9 @@ export default function ProductsSection() {
           desc={productsCopy.desc}
         />
 
-        {/* Filter Buttons */}
+        {/* Filter Buttons — Ab sirf active products wale buttons hi dikhein ge */}
         <div className="products__filters">
-          {productFilters.map(({ id }) => (
+          {activeFilterIds.map((id) => (
             <button
               key={id}
               className={`filter-btn${activeFilter === id ? " filter-btn--active" : ""}`}

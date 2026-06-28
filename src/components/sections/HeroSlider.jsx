@@ -13,12 +13,13 @@ const DEFAULT_SLIDE = {
   badge: "Premium Quality",
   title: "Fresh & Organic",
   highlight: "Farm Products",
-  subtitle: "High-quality organic farm-fresh products delivered straight to your doorstep.",
+  subtitle:
+    "High-quality organic farm-fresh products delivered straight to your doorstep.",
   product: {
     available: false, // Order button click handle karne ke liye safety check
     stockCount: 0,
-    discountPercentage: 0
-  }
+    discountPercentage: 0,
+  },
 };
 
 export default function HeroSlider() {
@@ -95,22 +96,28 @@ export default function HeroSlider() {
 
   const handleOrderNow = (slide) => {
     const product = slide.product;
-    // Agar fallback slide hai jisme real product nahi hai, to function yahin ruk jaye
-    if (!product?.id || !product?.available || (Number(product.stockCount) || 0) <= 0) return;
-    
-    const quantity = product.unitType === "kg" ? (product.kgOptions?.[0] ?? 0.5) : 1;
+    if (
+      !product?.id ||
+      !product?.available ||
+      (Number(product.stockCount) || 0) <= 0
+    )
+      return;
+
+    const quantity =
+      product.unitType === "kg" ? (product.kgOptions?.[0] ?? 0.5) : 1;
     addToCart(product, quantity);
     openCart();
   };
 
   const activeSlide = slides[current];
-  const isAchar = activeSlide?.slideType === "achar";
+  const activeType = activeSlide?.slideType || "poultry";
 
   return (
     <section
       id="home"
       aria-label="Featured banners"
-      className={`hero-slider${isAchar ? " hero-slider--achar-active" : ""}`}
+      // Dynamic master class jo active slide type ko apply karegi (e.g. hero-slider--fruits-active)
+      className={`hero-slider hero-slider--${activeType}-active`}
     >
       {/* Viewport + Track */}
       <div className="hero-slider__viewport">
@@ -118,23 +125,23 @@ export default function HeroSlider() {
           className={`hero-slider__track${instant ? " hero-slider__track--instant" : ""}`}
           style={{ transform: `translateX(-${current * 100}%)` }}
         >
-          {slides.map((slide) => {
+          {slides.map((slide, index) => {
             const productDiscount = slide.product?.discountPercentage ?? 0;
             const hasDiscount = productDiscount > 0;
-            const slideIsAchar = slide.slideType === "achar";
-            
+            const currentType = slide.slideType || "poultry";
+
             // Firebase se image URL check karein
-            const slideImageUrl = slide.product?.imageUrl; 
+            const slideImageUrl = slide.product?.imageUrl;
             const isImageBroken = brokenImages[slide.id];
+
+            // Sirf Pehli Slide ko sab se pehle load karne ke liye dynamic logic
+            const isFirstSlide = index === 0;
 
             return (
               <div
                 key={slide.id}
-                className={`hero-slider__slide${
-                  slideIsAchar
-                    ? " hero-slider__slide--achar"
-                    : " hero-slider__slide--poultry"
-                }`}
+                // 🔥 Fixed Bug: Ab har slide type (fruits, dairy, poultry, achar) ko apni specific class milegi
+                className={`hero-slider__slide hero-slider__slide--${currentType}`}
               >
                 <div className="container">
                   <div className="hero-slider__content">
@@ -146,13 +153,11 @@ export default function HeroSlider() {
                       </div>
 
                       <h1 className="hero-slider__title">
-                        {slide.title}{" "}
-                        <span>{slide.highlight}</span>
+                        {slide.title} <span>{slide.highlight}</span>
                       </h1>
 
                       <p className="hero-slider__subtitle">{slide.subtitle}</p>
 
-                      {/* Agar default fallback slide ho, to Order Now button hide kar sakte hain ya disabled */}
                       {slide.id !== "default-fallback" && (
                         <button
                           className="btn btn--primary"
@@ -166,27 +171,32 @@ export default function HeroSlider() {
                     {/* Right: Visual */}
                     <div className="hero-slider__visual">
                       {hasDiscount && (
-                        <span className="hero-slider__discount-tag" style={{ zIndex: 10 }}>
+                        <span
+                          className="hero-slider__discount-tag"
+                          style={{ zIndex: 10 }}
+                        >
                           {productDiscount}% OFF
                         </span>
                       )}
 
-                      {/* Naya Image rendering check fallback system ke sath */}
                       {slideImageUrl && !isImageBroken ? (
                         <img
                           src={slideImageUrl}
-                          alt={slide.title}
+                          // SEO Optimization: Brand name aur clean descriptive alt tag
+                          alt={`${slide.title} ${slide.highlight} - Dogar Vision`}
                           className="hero-slider__img"
+                          loading={isFirstSlide ? "eager" : "lazy"}
+                          fetchPriority={isFirstSlide ? "high" : "low"}
                           onError={() => {
-                            setBrokenImages(prev => ({ ...prev, [slide.id]: true }));
+                            setBrokenImages((prev) => ({
+                              ...prev,
+                              [slide.id]: true,
+                            }));
                           }}
                         />
                       ) : (
                         /* Purana Emoji Fallback */
-                        <span
-                          className="hero-slider__emoji"
-                          aria-hidden="true"
-                        >
+                        <span className="hero-slider__emoji" aria-hidden="true">
                           {slide.emoji}
                         </span>
                       )}

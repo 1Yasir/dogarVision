@@ -15,7 +15,7 @@ export default function CartPage() {
   }, []);
 
   return (
-    <div className="bg-body min-vh-100 d-flex flex-column">
+    <div>
       <SeoHelmet
         title={seoCopy.cart.title}
         description={seoCopy.cart.description}
@@ -23,7 +23,7 @@ export default function CartPage() {
       />
       <NavBar />
 
-      <main className="py-4">
+      <main className="cart-page">
         <Container>
           <Breadcrumbs
             items={[
@@ -38,7 +38,7 @@ export default function CartPage() {
             desc={cartCopy.desc}
           />
 
-          <div className="mt-4">
+          <div className="">
             <CartContent />
           </div>
         </Container>

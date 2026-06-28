@@ -99,6 +99,9 @@ export default function ProductCard({
           alt={name}
           className="product-card__img"
           onError={() => setImageError(true)} // ◄ Agar folder me file na ho, to auto emoji par shift ho jaye
+          loading="lazy"
+          width="300"          
+          height="300"
         />
       ) : (
         /* Fallback: Agar picture missing hai ya load nahi hui, to purana emoji dikhaye */
