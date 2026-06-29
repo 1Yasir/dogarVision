@@ -341,7 +341,7 @@ html.dark .nav__theme-btn {
   font-size: 1.0625rem;
   color: var(--text-muted);
   line-height: 1.7;
-  max-width: 640px;
+  /* max-width: 640px; */
 }
 
 /* ΓöÇΓöÇ Hero Slider ΓöÇΓöÇ */

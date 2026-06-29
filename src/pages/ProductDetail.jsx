@@ -400,7 +400,7 @@ export default function ProductDetail() {
       </section>
 
       {/* ── CTA ── */}
-      <div className="product-detail__cta">
+      {/* <div className="product-detail__cta">
         <div className="container">
           <div className="product-detail__cta-inner">
             <h2 className="product-detail__cta-title">
@@ -427,7 +427,7 @@ export default function ProductDetail() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       <Footer />
       <CartFab />
